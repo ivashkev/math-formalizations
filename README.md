@@ -1,6 +1,6 @@
 # math-formalizations
 
-by Evgeny V Ivashkevich
+by Evgeny Ivashkevich
 
 This project is focused on the formalization of some elementary mathematical theories in Coq and is intended as an addition to the lecture course on math formalizations and certified programming:
 
