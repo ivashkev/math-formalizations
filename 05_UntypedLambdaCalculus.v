@@ -26,9 +26,9 @@ Definition nextSymbol := S.
 Definition Context : Set := list Symbol.
 
 Inductive Term : Set:=
-  | Var : Symbol -> Term
-  | Lam : Symbol -> Term -> Term
-  | App : Term -> Term -> Term.
+         | Var : Symbol -> Term
+         | Lam : Symbol -> Term -> Term
+         | App : Term -> Term -> Term.
 Notation " # n " := (Var n)(at level 1).
 Notation " x ''' y " := (App x y)(at level 15, left associativity).
 Notation " '\' n '->' x " := (Lam n x)
@@ -44,10 +44,10 @@ Fixpoint Nth (n : nat)(G : Context) : Symbol :=
   match G with
   | [] => 0
   | h :: t => match n with
-                   | 0 => 0
-                   | S 0 => h
-                   | S m => Nth m t
-                   end
+              | 0 => 0
+              | S 0 => h
+              | S m => Nth m t
+              end
   end.
 
 Fixpoint In (x : Symbol)(G : Context) : bool :=
@@ -127,9 +127,9 @@ Definition newSymbol (G : Context) := getSymbol (sort G) 1.
 (********************************************************************)
 
 Inductive term : Set:=
-  | var : nat -> term
-  | lam : term -> term
-  | app : term -> term -> term.
+         | var : nat -> term
+         | lam : term -> term
+         | app : term -> term -> term.
 
 Fixpoint removeSymbols (t : Term)(G : Context) : term :=
   match t with
