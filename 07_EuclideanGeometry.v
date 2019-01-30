@@ -193,7 +193,8 @@
        W. H. Freeman, New York, 2008.
  [9] Robin Hartshorne, "Geometry: Euclid and beyond",
        Springer, 2000
-[10] Julien Narboux and others, "GeoCoq Project".
+[10] Julien Narboux and others, "GeoCoq Project", 
+       https://geocoq.github.io/GeoCoq/
 
 *)
 
