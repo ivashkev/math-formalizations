@@ -54,32 +54,32 @@ Fixpoint In (x : Symbol)(G : Context) : bool :=
   match G with
   | [] => false
   | h :: t => if eq_nat_dec x h
-                   then true
-                   else In x t
+              then true
+              else In x t
   end.
 
 Fixpoint Pth (x : Symbol)(G : Context) : nat :=
   match G with
   | [] => 0
   | h :: t => if eq_nat_dec x h
-                   then (S O)
-                   else S (Pth x t)
+              then (S O)
+              else S (Pth x t)
   end.
 
 Fixpoint remove (x : Symbol)(G : Context) : Context :=
   match G with
   | [] => []
   | h :: t => if eq_nat_dec x h
-                   then remove x t
-                   else h :: (remove x t)
+              then remove x t
+              else h :: (remove x t)
   end.
 
 Fixpoint nodups (G : Context) : Context :=
   match G with
   | [] => []
   | h :: t => if in_dec eq_nat_dec h t
-                   then nodups t
-                   else h :: (nodups t)
+              then nodups t
+              else h :: (nodups t)
   end.
 
 Fixpoint freeVariables (T : Term) : Context :=
@@ -100,8 +100,8 @@ Fixpoint insert (x : Symbol)(G : Context) : Context :=
   match G with
   | [] => [x]
   | h :: t => if le_lt_dec x h
-                   then x :: h :: t
-                   else h :: insert x t
+              then x :: h :: t
+              else h :: insert x t
   end.
 
 Fixpoint sort (G : Context) : Context :=
@@ -114,10 +114,10 @@ Fixpoint getSymbol (G : Context)(x : Symbol) : Symbol :=
   match G with
   | [] => x
   | h :: t => if eq_nat_dec h x
-                   then getSymbol t (nextSymbol x)
-                   else if le_gt_dec h x
-                           then getSymbol t x
-                           else x
+              then getSymbol t (nextSymbol x)
+              else if le_gt_dec h x
+                   then getSymbol t x
+                   else x
   end.
 
 Definition newSymbol (G : Context) := getSymbol (sort G) 1.
