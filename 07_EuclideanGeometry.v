@@ -1,10 +1,8 @@
 (*
- 
- CONSTRUCTIVE AXIOMATICS FOR PLANE EUCLIDEAN GEOMETRY
+
+ ON CONSTRUCTIVE-DEDUCTIVE METHOD FOR PLANE EUCLIDEAN GEOMETRY
 
  Evgeny V. Ivashkevich
- 
- E-mail: ivashkev@yandex.ru
 
  January 29, 2019
 
@@ -18,8 +16,8 @@
  To solve a problem one needs to find a sequence of elementary actions
  (postulates) that leads to the construction of a figure with the required
  properties. The set of allowed elementary actions is completely determined
- by chosen geometric tools (a pencil, a ruler and a collapsing compass) and
- provides us with the instructions on how to handle these instruments.
+ by chosen geometric tools (a pencil, a straightedge and a collapsing compass)
+ and provides us with the instructions on how to handle these instruments.
  Pencil helps us to draw some points on a plane. Ruler helps us to draw a
  straight lines passing through two distinct points. Compass helps us to
  draw a circle through a given point and center of the circle.
@@ -60,8 +58,8 @@
  original Euclid's constructions and vice versa.
  Despite of the apparent success, this reduction of classical logic cannot
  be considered satisfactory. Indeed, let us recall that Euclid builds his
- theory using a limited set of geometric tools (a pencil, a ruler and a
- collapsing compass). This means, that translating postulates and problems
+ theory using a limited set of geometric tools (a pencil, a straightedge and
+ a collapsing compass). This means, that translating postulates and problems
  into existential axioms and theorems, and then limiting ourselves by the
  rules of intuitionistic logic, we shall be able to prove existence of only
  those geometric figures that can be constructed with this limited set of
@@ -90,28 +88,28 @@
  classical logic.
  b) Another striking feature of the Hilbert's axioms is the complete absence of
  circles. Instead of circles, Hilbert focuses all his attention on the
- properties of angles. Moreover, instead of Euclid's tools (a pencil, a ruler
- and a collapsing compass), Hilbert introduces more complicated instruments to
- transfer both segments and angles. Surprisingly, those same authors who
- criticized Euclid for his method of superposition (which is nothing more than
- an auxiliary tool for existential triangle transfer) seem to accept
- Hilbert's tool for angle transfer without any questions.
+ properties of angles. Moreover, instead of Euclid's tools (a pencil,
+ a straightedge and a collapsing compass), Hilbert introduces more complicated
+ instruments to transfer both segments and angles. Surprisingly, those same
+ authors who criticized Euclid for his method of superposition (which is
+ nothing more than an auxiliary tool for existential triangle transfer) seem
+ to accept Hilbert's tool for angle transfer without any questions.
  Since without compass it is not possible to reproduce many propositions from
  Euclid's Elements, Hilbert followers [8,9] have to introduce some additional
  "principles": such as line-circle intersection and circle-circle
  intersection. These "principles" are nothing but additional postulates that
- describe simple constructions by ruler and compass. However, those authors
- do not add these "principles" to the list of Hilbert's axioms. Instead,
- they treat them as being derived from the Hilbert continuity axiom. Needless
- to say, that if such a derivation is actually provided by those authors,
- it goes far beyond Euclid's original approach.
+ describe simple constructions by straightedge and compass. However, those
+ authors do not add these "principles" to the list of Hilbert's axioms.
+ Instead,they treat them as being derived from the Hilbert continuity axiom.
+ Needless to say, that if such a derivation is actually provided by those
+ authors, it goes far beyond Euclid's original approach.
  c) As for the treatment of angles on which Hilbert seems to focus instead of
  circles, it cannot be considered completely satisfactory either. The thing
  is that, Hilbert defines only convex angles (greater than null angle and
  less than straight angle). As a result of this truncated definition, it is
  impossible to universally define the addition of two arbitrary convex
  angles. Indeed, the sum of the two convex angles in Hilbert's theory is
- defined only iff the resulting angle is also convex. 
+ defined only if the resulting angle is also convex.
  d) In the last edition of his book, to define area of an arbitrary polygon
  Hilbert introduces the idea of triangle orientation. However, Hilbert did
  not provide the reader with any clear definition of the triangle orientation
@@ -119,9 +117,9 @@
  e) Hilbert introduces a number of separate congruence axioms for segments and
  angles. In Euclid's approach, on the contrary, the lengths of segments,
  angular measures and areas were all considered as "quantities" that obey the
- same universal axioms: "two quantities equal to the third are equal to each 
- other", etc. In other words, for Euclid, "quantities" are more general 
- concepts than segments and angles themselves. As such, Euclid considers 
+ same universal axioms: "two quantities equal to the third are equal to each
+ other", etc. In other words, for Euclid, "quantities" are more general
+ concepts than segments and angles themselves. As such, Euclid considers
  "quantities" as classes o congruence.
 
  3. Motivation and results
@@ -144,9 +142,9 @@
  logic for proofs in the "Prop" sort, and at the same time limit ourselves
  to intuitionistic logic for constructions in the "Set" sort. As a result,
  our constructions will be limited to only those that can be performed with
- our simple tools (a pencil, a ruler and a collapsing compass), while we
- shall be able to prove propositional existence of more complex geometric
- figures.
+ our simple tools (a pencil, a straightedge and a collapsing compass),
+ while we shall be able to prove propositional existence of more complex
+ geometric figures.
  We abandon Hilbert's postulates for segment and angle transfer and replace
  them with simple versions of Euclid's postulates for collapsing compass
  whose legs fold up when the compass is lifted off the paper. Moreover,
@@ -160,18 +158,27 @@
  it was questioned even in the times of Euclid. In our interpretation the
  method of superposition turns into an axiom about the existence of an equal
  triangle anywhere on the plane. The actual construction of equal triangle
- can be done later by our standard tools (a pencil, a ruler and a collapsing
- compass).
+ can be done later by our standard tools (a pencil, a straightedge
+ and a collapsing compass).
  We define angles as a pairs of rays originating from the same point and prove
  that addition of angles can be defined uniformly for all angles (modulo the
  full angle). Then we define the orientation of angles on the plane and use
  this concept to define a subclass of convex angles, thus returning to
  the Hilbert's definition of angle. As a results, all Hilbert axioms can
  be derived form our formalization of Euclid's constructive-deductive method.
- Finally, we replaced congruence axioms for segments and angles by
+ We also replaced congruence axioms for segments and angles by
  their classes of congruences and consider the classes as definitions of
  Euclid's "quantities". Such an approach simplifies our formalization
  of Euclid's constructive-deductive method in the Coq Proof Assistant.
+ Finally, we demonstrate that from this set of constructive axioms it is
+ possible to reproduce all the Von Plato (for constructive incidence geometry)
+ and Hilbert axioms exactly in the form proposed by Gilles Kahn [10] and
+ Julien Narboux et al [11].
+
+ I would like to thank Andrei Rodin for interesting discussions about
+ Euclid's methods and phylosophy. I am also grateful to Julien Narboux and
+ Yves Bertot for drawing my attention to references [12-14] on recent
+ development in the field.
 
  BIBLIOGRAPHY
 
@@ -193,9 +200,22 @@
        W. H. Freeman, New York, 2008.
  [9] Robin Hartshorne, "Geometry: Euclid and beyond",
        Springer, 2000
-[10] Julien Narboux and others, "GeoCoq Project", 
+[10] Gilles Kahn, "Constructive Geometry following Jan von Plato",
+       https://github.com/coq-contribs/constructive-geometry
+[11] Julien Narboux et al, "GeoCoq Project",
        https://geocoq.github.io/GeoCoq/
-
+       see also references therein.
+[12] Kellison, A., Bickford, M. & Constable, R. "Implementing Euclid\u2019s
+       straightedge and compass constructions in type theory",
+       Ann Math Artif Intell (2018).
+       http://www.nuprl.org/MathLibrary/geometry/
+[13] Michael Beeson,"Constructive Geometry and the Parallel Postulate",
+       The Bulletin of Symbolic Logic, 22(1), 1-104 (2016).
+       Other publications by Michael Beeson
+       http://www.michaelbeeson.com/research/papers/pubs.html
+[14] Michael Beeson, Julien Narboux, Freek Wiedijk, "Proof-checking Euclid",
+       Annals of Mathemat- ics and Artificial Intelligence,
+       Springer Verlag, 2019, pp.53.
 *)
 
 Require Import Classical Setoid Morphisms.
@@ -441,7 +461,7 @@ Notation " [ A -- O -- B ] "
 Class Orientations `(qs : Quantities) :=
 {(* This class does not contain any additional postulates or axioms.
  It will be instantiated later based on the postulates and axioms of
- poins, lines and circles. This class is placed here for a
+ points, lines and circles. This class is placed here for a
  technical reasons. It helps us to define the convex angles right here,
  at the very beginning of the file. Otherwise we woud have to postpone
  the definition of the convex angles together with angle axioms
@@ -585,7 +605,7 @@ Class Angles `(on : Orientations) :=
  earlier for pairs of rays originating from the same point, can also be
  assigned to their respective angles. So, with this axiom we can lift
  definition of orientation up from a particular geometric figures
- (pair of rays) to angles (congruence class).
+ (pairs of rays) to angles (congruence class).
 *)
   (** A4 *)
   EqRs_EqRs_EqAs : forall (a b c d : Ray)
@@ -626,7 +646,7 @@ Class Concentricals `(cr : Circles) :=
       -> [| O, A |] = [| O, A' |]
       -> [| O, B |] = [| O, B' |]
       -> [ O # A' # B' ] /\ [| A, B |] = [| A', B' |];
-  (** P12, Circle-Circle Intersection*)
+  (** P12, Circle-Circle Intersection *)
   DrawIntersectionPointCC : forall (A O B A' O' B' P: Point),
     ~ [ O, O', P ]
       -> [ A -- O -- B ]
@@ -664,7 +684,7 @@ Class Congruences `(on : Orientations) :=
 
 Class Parallels (dc : Declarations)(df : Definitions dc) :=
 {
-  (** A11, John Playfair, 1748-1819 *)
+  (** A11, John Playfair *)
   (* No more than one line parallel to the given passes through
    an arbitrary point on the plane. *)
   ParallelAxiom :
@@ -1529,9 +1549,9 @@ Proof with eauto.
   destruct (DrawPointOnLine x) as [ P Pox ].
   destruct (DrawDistinctPointOnLine P x Pox) as [ Q [ nPeqQ Qox ]].
   destruct (nColPs_5_trans P Q A B C) as [[ G | G ]| G ]...
-   { left; left. contradict G. exists x; repeat split... }
-   { left; right. contradict G. exists x; repeat split... }
-   { right. contradict G. exists x; repeat split... }
+  { left; left. contradict G. exists x; repeat split... }
+  { left; right. contradict G. exists x; repeat split... }
+  { right. contradict G. exists x; repeat split... }
 Defined.
 
 (** Problem #8 *)
@@ -3348,7 +3368,6 @@ Proof with inc.
 Defined.
 
 (** Theorem #12 *)
-(* The relation Between is co-transitive. *)
 Theorem BetPs_BetPs_SR :
   forall O A B C : Point,
   [ A # O # B ]
@@ -3449,7 +3468,6 @@ Proof.
 Qed.
 
 (** Theorem #13 *)
-(* The relation Between is co-transitive. *)
 Theorem BetPs_a_trans :
   forall A B C D : Point,
   [ A # B # D ]
@@ -3910,7 +3928,6 @@ Proof with ord.
 Defined.
 
 (** Theorem #14 *)
-(* The relation Between is co-transitive. *)
 Theorem ConvexHalfplane :
   forall (A B C : Point)(x : Line),
   [ A # B # C ]
@@ -23001,7 +23018,7 @@ Class Hilbert :=
   line_uniqueness : forall A B l m,
     A <> B -> inc A l -> inc B l -> inc A m -> inc B m -> l = m;
   two_points_on_line : forall l,
-    { A : point & { B | inc B l /\ inc A l /\ A <> B} };
+    { A : point & { B | inc B l /\ inc A l /\ A <> B } };
   col := fun A B C => exists l, inc A l /\ inc B l /\ inc C l;
   ncol := fun A B C => ~ exists l, inc A l /\ inc B l /\ inc C l;
   l0 : line;
