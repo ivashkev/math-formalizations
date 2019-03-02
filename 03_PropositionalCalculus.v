@@ -1974,7 +1974,7 @@ Proof.
        right; left; reflexivity.
 Qed.
 
-(* Equivalence of natural deduction and formulaositionalal calculus. *)
+(* Equivalence of natural deduction and propositionalal calculus. *)
 
 Lemma pc_nd (G : context)(P : formula) :
   G |= P
