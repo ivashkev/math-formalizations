@@ -205,7 +205,7 @@
 [11] Julien Narboux et al, "GeoCoq Project",
        https://geocoq.github.io/GeoCoq/
        see also references therein.
-[12] Kellison, A., Bickford, M. & Constable, R. "Implementing Euclid\u2019s
+[12] Kellison, A., Bickford, M. & Constable, R. "Implementing Euclid's
        straightedge and compass constructions in type theory",
        Ann Math Artif Intell (2018).
        http://www.nuprl.org/MathLibrary/geometry/
@@ -214,7 +214,7 @@
        Other publications by Michael Beeson
        http://www.michaelbeeson.com/research/papers/pubs.html
 [14] Michael Beeson, Julien Narboux, Freek Wiedijk, "Proof-checking Euclid",
-       Annals of Mathemat- ics and Artificial Intelligence,
+       Annals of Mathematics and Artificial Intelligence,
        Springer Verlag, 2019, pp.53.
 *)
 
