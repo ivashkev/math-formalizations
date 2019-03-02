@@ -128,14 +128,14 @@ Definition Compatible (E : evaluation)(G : context) : Prop
 Definition Eq (G : context)(P Q : formula) : Prop
   := forall (E : evaluation),
      Compatible E G -> formulaValue E P = formulaValue E Q.
-Notation "G |-- [ P ] == [ Q ]"
+Notation "G |== [ P ] == [ Q ]"
   := (Eq G P Q)
   (at level 80, right associativity).
-Notation "G |-- P"
-  := (G |-- [ P ] == [ truth ])
+Notation "G |== P"
+  := (G |== [ P ] == [ truth ])
   (at level 80).
-Notation "|-- P"
-  := ([] |-- P)
+Notation "|== P"
+  := ([] |== P)
   (at level 80).
 
 Lemma Compatible_empty (E : evaluation) :
@@ -147,7 +147,7 @@ Proof.
 Qed.
 
 Lemma ValidProposition (P : formula) :
-  |-- P
+  |== P
     <-> forall (E : evaluation), formulaValue E P = true.
 Proof.
   unfold Eq.
@@ -223,7 +223,7 @@ Qed.
 
 Lemma pa_as (G : context)(P : formula) :
   P :- G
-    -> G |-- P.
+    -> G |== P.
 Proof.
   unfold Eq, Compatible.
   intros.
@@ -231,9 +231,9 @@ Proof.
 Qed.
 
 Lemma pa_ap (G : context)(P Q : formula) :
-  G |-- P --> Q
-    -> G |-- P
-    -> G |-- Q.
+  G |== P --> Q
+    -> G |== P
+    -> G |== Q.
 Proof with eauto.
   unfold Eq.
   intros.
@@ -247,7 +247,7 @@ Proof with eauto.
 Qed.
 
 Lemma pa_K (G : context)(P Q : formula) :
-  G |-- P --> (Q --> P).
+  G |== P --> (Q --> P).
 Proof.
   unfold Eq.
   intros.
@@ -258,7 +258,7 @@ Proof.
 Qed.
 
 Lemma pa_S (G : context)(P Q R : formula) :
-  G |-- (P --> Q --> R) --> (P --> Q) --> (P --> R).
+  G |== (P --> Q --> R) --> (P --> Q) --> (P --> R).
 Proof.
   unfold Eq.
   intros.
@@ -271,7 +271,7 @@ Proof.
 Qed.
 
 Lemma pa_C (G : context)(P : formula) :
-  G |-- ^ ^ P --> P.
+  G |== ^ ^ P --> P.
 Proof.
   unfold Eq.
   intros.
@@ -281,7 +281,7 @@ Proof.
 Qed.
 
 Lemma pa_impl_refl (G : context)(P : formula) :
-  G |-- P --> P.
+  G |== P --> P.
 Proof.
   apply (pa_ap G (P --> P --> P)).
   { apply (pa_ap G (P --> (P --> P) --> P)).
@@ -292,14 +292,14 @@ Proof.
 Qed.
 
 Lemma pa_True (G : context) :
-  G |-- truth.
+  G |== truth.
 Proof.
   apply pa_impl_refl.
 Qed.
 
 Lemma pa_ext (G : context)(P Q : formula) :
-  G |-- P
-    -> G |-- Q --> P.
+  G |== P
+    -> G |== Q --> P.
 Proof.
   intros H.
   apply (pa_ap G P); try assumption.
@@ -307,8 +307,8 @@ Proof.
 Qed.
 
 Lemma pa_ext_hyps (G : context)(P Q : formula) :
-  G |-- P
-    -> Q :: G |-- P.
+  G |== P
+    -> Q :: G |== P.
 Proof.
   intros H.
   unfold Eq in *.
@@ -319,8 +319,8 @@ Proof.
 Qed.
 
 Lemma pa_ctx_ext (G1 G2 : context)(P : formula) :
-  G1 |-- P
-    -> G2 ++ G1 |-- P.
+  G1 |== P
+    -> G2 ++ G1 |== P.
 Proof.
   intros H.
   unfold Eq in *.
@@ -333,8 +333,8 @@ Qed.
 (** Deduction rule *)
 
 Lemma pa_in (G : context)(P Q : formula) :
-  P :: G |-- Q
-    -> G |-- P --> Q.
+  P :: G |== Q
+    -> G |== P --> Q.
 Proof with eauto.
   unfold Eq; simpl; intros.
   assert (Compatible E (P :: G) -> formulaValue E Q = true)...
@@ -348,8 +348,8 @@ Proof with eauto.
 Qed.
 
 Lemma pa_mp (G : context)(P Q : formula) :
-  G |-- P --> Q
-    -> P :: G |-- Q.
+  G |== P --> Q
+    -> P :: G |== Q.
 Proof.
   intros H.
   apply (pa_ap (P :: G) P Q).
@@ -358,15 +358,15 @@ Proof.
 Qed.
 
 Lemma pa_mp_hyp (G : context)(P Q : formula) :
-  P :: (P --> Q) :: G |-- Q.
+  P :: (P --> Q) :: G |== Q.
 Proof.
   apply pa_mp.
   apply pa_as; auto; left; reflexivity.
 Qed.
 
 Lemma pa_mp_var (G : context)(P Q : formula) :
-  G |-- P
-    -> G |-- (P --> Q) --> Q.
+  G |== P
+    -> G |== (P --> Q) --> Q.
 Proof.
   intros H.
   apply pa_in.
@@ -376,9 +376,9 @@ Proof.
 Qed.
 
 Lemma pa_excl (G : context)(P Q : formula) :
-  G |-- P
-    -> P :: G |-- Q
-    -> G |-- Q.
+  G |== P
+    -> P :: G |== Q
+    -> G |== Q.
 Proof.
   intros H1 H2.
   apply (pa_ap G P Q); auto.
@@ -388,8 +388,8 @@ Qed.
 (** Context Theorems *)
 
 Lemma pa_hyp_elim (G : context)(P Q : formula) :
-  P :: P :: G |-- Q
-    -> P :: G |-- Q.
+  P :: P :: G |== Q
+    -> P :: G |== Q.
 Proof.
   intros H.
   unfold Eq in *.
@@ -401,8 +401,8 @@ Proof.
 Qed.
 
 Lemma pa_swap_hyps (G : context)(P Q R : formula) :
-  P :: Q :: G |-- R
-    -> Q :: P :: G |-- R.
+  P :: Q :: G |== R
+    -> Q :: P :: G |== R.
 Proof.
   intros H.
   unfold Eq in *.
@@ -417,8 +417,8 @@ Proof.
 Qed.
 
 Lemma pa_ctx_sym (G1 G2 : context)(P : formula) :
-  G1 ++ G2 |-- P
-    -> G2 ++ G1 |-- P.
+  G1 ++ G2 |== P
+    -> G2 ++ G1 |== P.
 Proof.
   intros H.
   unfold Eq in *.
@@ -430,8 +430,8 @@ Proof.
 Qed.
 
 Lemma pa_swap_ctx (G1 G2 : context)(P Q R: formula) :
-  G1 ++ [ P ; Q ] ++ G2 |-- R
-    -> G1 ++ [ Q ; P ] ++ G2 |-- R.
+  G1 ++ [ P ; Q ] ++ G2 |== R
+    -> G1 ++ [ Q ; P ] ++ G2 |== R.
 Proof.
   intros H.
   apply pa_ctx_sym in H.
@@ -442,8 +442,8 @@ Proof.
 Qed.
 
 Lemma pa_first_hyp_last (G : context)(P Q : formula) :
-  [ P ] ++ G |-- Q
-    -> G ++ [ P ] |-- Q.
+  [ P ] ++ G |== Q
+    -> G ++ [ P ] |== Q.
 Proof.
   intros H.
   unfold Eq in *.
@@ -455,8 +455,8 @@ Proof.
 Qed.
 
 Lemma pa_ctx_split_sym (G1 G2 G3 : context)(P : formula) :
-  G1 ++ G2 ++ G3 |-- P
-    -> G2 ++ G1 ++ G3 |-- P.
+  G1 ++ G2 ++ G3 |== P
+    -> G2 ++ G1 ++ G3 |== P.
 Proof.
   intros H.
   unfold Eq in *.
@@ -471,7 +471,7 @@ Proof.
 Qed.
 
 Lemma pa_ctx_nodup (G : context)(P : formula) :
-  G |-- P <-> ndf G |-- P.
+  G |== P <-> ndf G |== P.
 Proof.
   split; intros * H; unfold Eq in *;
   intros f CfG; apply H; apply Compatible_nodup_ctx; auto.
@@ -480,9 +480,9 @@ Qed.
 (** Transitivity Theorems *)
 
 Lemma pa_asoc (G : context)(P Q R : formula) :
-  G |-- P --> Q
-    -> G |-- Q --> R
-    -> G |-- P --> R.
+  G |== P --> Q
+    -> G |== Q --> R
+    -> G |== P --> R.
 Proof.
   intros H1 H2.
   apply pa_in.
@@ -492,9 +492,9 @@ Proof.
 Qed.
 
 Lemma pa_asoc_pc (G : context)(P Q R : formula) :
-  P :: G |-- Q
-    -> Q :: G |-- R
-    -> P :: G |-- R.
+  P :: G |== Q
+    -> Q :: G |== R
+    -> P :: G |== R.
 Proof.
   intros H1 H2.
   apply pa_mp.
@@ -506,8 +506,8 @@ Qed.
 (** Contraposition Theorems *)
 
 Lemma pa_not_intro (G : context)(P : formula) :
-  G |-- P
-    -> G |-- ^ ^ P.
+  G |== P
+    -> G |== ^ ^ P.
 Proof.
   intros H.
   apply pa_mp_var.
@@ -515,8 +515,8 @@ Proof.
 Qed.
 
 Lemma pa_not_elim (G : context)(P : formula) :
-  G |-- ^ ^ P
-    -> G |-- P.
+  G |== ^ ^ P
+    -> G |== P.
 Proof.
   intros H.
   apply (pa_ap G (^ ^ P)).
@@ -525,8 +525,8 @@ Proof.
 Qed.
 
 Lemma pa_contr_pc (G : context)(P Q : formula) :
-  G |-- P --> Q
-    -> G |-- ^ Q --> ^ P.
+  G |== P --> Q
+    -> G |== ^ Q --> ^ P.
 Proof.
   intros H.
   apply pa_in. apply pa_in.
@@ -538,8 +538,8 @@ Proof.
 Qed.
 
 Lemma pa_contr (G : context)(P Q : formula) :
-  G |-- ^ Q --> ^ P
-    -> G |-- P --> Q.
+  G |== ^ Q --> ^ P
+    -> G |== P --> Q.
 Proof.
   intros H.
   apply pa_mp in H.
@@ -552,8 +552,8 @@ Proof.
 Qed.
 
 Lemma pa_contr_hyp (G : context)(P Q : formula) :
-  ^ Q :: G |-- ^ P
-    -> P :: G |-- Q.
+  ^ Q :: G |== ^ P
+    -> P :: G |== Q.
 Proof.
   intros H.
   apply pa_in in H.
@@ -562,8 +562,8 @@ Proof.
 Qed.
 
 Lemma pa_contr_hyp_pc (G : context)(P Q : formula) :
-  P :: G |-- Q
-    -> ^ Q :: G |-- ^ P.
+  P :: G |== Q
+    -> ^ Q :: G |== ^ P.
 Proof.
   intros H.
   apply pa_in in H.
@@ -572,7 +572,7 @@ Proof.
 Qed.
 
 Lemma pa_contr_var (G : context)(P Q : formula) :
-  G |-- (^ Q --> ^ P) --> P --> Q.
+  G |== (^ Q --> ^ P) --> P --> Q.
 Proof.
   apply pa_in.
   apply pa_contr.
@@ -580,15 +580,15 @@ Proof.
 Qed.
 
 Lemma pa_contradiction (G : context)(P : formula) :
-  P :: ^ P :: G |-- _|_.
+  P :: ^ P :: G |== _|_.
 Proof.
   apply pa_mp.
   apply pa_as; auto; left; reflexivity.
 Qed.
 
 Lemma pa_exfalso (G : context)(P : formula) :
-  G |-- _|_
-    -> G |-- P.
+  G |== _|_
+    -> G |== P.
 Proof.
   intros H.
   apply pa_not_elim.
@@ -597,9 +597,9 @@ Proof.
 Qed.
 
 Lemma pa_and_imp (G : context)(P Q : formula) :
-  G |-- P
-    -> G |-- ^ Q
-    -> G |-- ^ (P --> Q).
+  G |== P
+    -> G |== ^ Q
+    -> G |== ^ (P --> Q).
 Proof.
   intros.
   intros E CfG. unfold Eq in *; simpl in *.
@@ -611,7 +611,7 @@ Proof.
 Qed.
 
 Lemma DoubleNegationLaw (G : context)(P : formula) :
-  G |-- [ ^ ^ P ] == [ P ].
+  G |== [ ^ ^ P ] == [ P ].
 Proof.
   unfold Eq.
   intros; simpl.
@@ -621,7 +621,7 @@ Qed.
 (** Equivalencies of Logical Functions *)
 
 Lemma ExcludedMiddleLaw (G : context)(P : formula) :
-  G |-- P or ^ P.
+  G |== P or ^ P.
 Proof.
   unfold Eq, Or. 
   intros; simpl.
@@ -630,8 +630,8 @@ Proof.
 Qed.
 
 Lemma iffEq (G : context)(P Q : formula) :
-  G |-- [ P ] == [ Q ]
-    <->  G |-- P <--> Q.
+  G |== [ P ] == [ Q ]
+    <->  G |== P <--> Q.
 Proof.
   unfold Eq.
   intros; simpl. split.
@@ -651,7 +651,7 @@ Proof.
 Qed.
 
 Lemma LawOfContradiction (G : context)(P : formula) :
-  G |-- [ P and ^ P ] == [ _|_ ].
+  G |== [ P and ^ P ] == [ _|_ ].
 Proof.
   unfold Eq, And.
   intros; simpl.
@@ -660,7 +660,7 @@ Proof.
 Qed.
 
 Lemma And_sym (G : context)(P Q : formula) :
-  G |-- [ P and Q ] == [ Q and P ].
+  G |== [ P and Q ] == [ Q and P ].
 Proof.
   unfold Eq, And.
   intros; simpl.
@@ -670,7 +670,7 @@ Proof.
 Qed.
 
 Lemma Or_sym (G : context)(P Q : formula) :
-  G |-- [ P or Q ] == [ Q or P ].
+  G |== [ P or Q ] == [ Q or P ].
 Proof.
   unfold Eq, Or.
   intros; simpl.
@@ -680,7 +680,7 @@ Proof.
 Qed.
 
 Lemma And_assoc (G : context)(P Q R : formula) :
-  G |-- [ P and (Q and R) ] == [ (P and Q) and R ].
+  G |== [ P and (Q and R) ] == [ (P and Q) and R ].
 Proof.
   unfold Eq, And.
   intros; simpl.
@@ -691,7 +691,7 @@ Proof.
 Qed.
 
 Lemma Or_assoc (G : context)(P Q R : formula):
-  G |-- [ P or (Q or R) ] == [ (P or Q) or R ].
+  G |== [ P or (Q or R) ] == [ (P or Q) or R ].
 Proof.
   unfold Eq, Or.
   intros; simpl.
@@ -702,7 +702,7 @@ Proof.
 Qed.
 
 Lemma And_distib (G : context)(P Q R : formula) :
-  G |-- [ (P or Q) and R ] == [ (P and R) or (Q and R) ].
+  G |== [ (P or Q) and R ] == [ (P and R) or (Q and R) ].
 Proof.
   unfold Eq, And, Or.
   intros; simpl.
@@ -713,7 +713,7 @@ Proof.
 Qed.
 
 Lemma Or_distib (G : context)(P Q R : formula) :
-  G |-- [ (P and Q) or R ] == [ (P or R) and (Q or R) ].
+  G |== [ (P and Q) or R ] == [ (P or R) and (Q or R) ].
 Proof.
   unfold Eq, And, Or.
   intros; simpl.
@@ -724,7 +724,7 @@ Proof.
 Qed.
 
 Lemma Impl_equiv (G : context)(P Q : formula) :
-  G |-- [ P --> Q ] == [ ^ P or Q ].
+  G |== [ P --> Q ] == [ ^ P or Q ].
 Proof.
   unfold Eq, And, Or.
   intros; simpl.
@@ -734,7 +734,7 @@ Proof.
 Qed.
 
 Lemma DeMorgan_And (G : context)(P Q : formula) :
-  G |-- [ ^ (P and Q) ] == [ ^ P or ^ Q ].
+  G |== [ ^ (P and Q) ] == [ ^ P or ^ Q ].
 Proof.
   unfold Eq, And, Or.
   intros; simpl.
@@ -744,7 +744,7 @@ Proof.
 Qed.
 
 Lemma DeMorgan_Or (G : context)(P Q : formula) :
-  G |-- [ ^ (P or Q) ] == [ ^ P and ^ Q ].
+  G |== [ ^ (P or Q) ] == [ ^ P and ^ Q ].
 Proof.
   unfold Eq, And, Or.
   intros; simpl.
@@ -754,7 +754,7 @@ Proof.
 Qed.
 
 Lemma Absorbtion_And (G : context)(P Q : formula) :
-  G |-- [ (P and Q) or P ] == [ P ].
+  G |== [ (P and Q) or P ] == [ P ].
 Proof.
   unfold Eq, And, Or.
   intros; simpl.
@@ -764,7 +764,7 @@ Proof.
 Qed.
 
 Lemma Absorbtion_Or (G : context)(P Q : formula) :
-  G |-- [ P or (Q and P) ] == [ P ].
+  G |== [ P or (Q and P) ] == [ P ].
 Proof.
   unfold Eq, And, Or.
   intros; simpl.
@@ -775,29 +775,29 @@ Qed.
 
 (* PROPOSITIONAL CALCULUS *)
 
-Reserved Notation "G |= F" (at level 70).
+Reserved Notation "G |-- F" (at level 70).
 Inductive PC : context -> formula -> Prop :=
          | pc_as (G : context)(P : formula) :
              P :- G
-               -> G |= P
+               -> G |-- P
          | pc_ap (G : context)(P Q : formula) :
-             G |= P --> Q
-               -> G |= P
-               -> G |= Q
+             G |-- P --> Q
+               -> G |-- P
+               -> G |-- Q
          | pc_K (G : context)(P Q : formula) :
-             G |= P --> (Q --> P)
+             G |-- P --> (Q --> P)
          | pc_S (G : context)(P Q R: formula) :
-             G |= (P --> Q --> R) --> (P --> Q) --> (P --> R)
+             G |-- (P --> Q --> R) --> (P --> Q) --> (P --> R)
          | pc_C (G : context)(P : formula) :
-             G |= ^ ^ P --> P
-    where "G |= F" := (PC G F).
+             G |-- ^ ^ P --> P
+    where "G |-- F" := (PC G F).
 
-Notation "|= P"
-  := ([] |= P)
+Notation "|-- P"
+  := ([] |-- P)
   (at level 80).
 
 Lemma pc_impl_refl (G : context)(P : formula) :
-  G |= P --> P.
+  G |-- P --> P.
 Proof.
   apply (pc_ap G (P --> P --> P)).
   { apply (pc_ap G (P --> (P --> P) --> P)).
@@ -808,14 +808,14 @@ Proof.
 Qed.
 
 Lemma pc_True (G : context) :
-  G |= truth.
+  G |-- truth.
 Proof.
   apply pc_impl_refl.
 Qed.
 
 Lemma pc_ext (G : context)(P Q : formula) :
-  G |= P
-    -> G |= Q --> P.
+  G |-- P
+    -> G |-- Q --> P.
 Proof.
   intros H.
   apply (pc_ap G P). { apply pc_K. }
@@ -823,8 +823,8 @@ Proof.
 Qed.
 
 Lemma pc_ext_hyps (G : context)(P Q : formula) :
-  G |= P
-    -> Q :: G |= P.
+  G |-- P
+    -> Q :: G |-- P.
 Proof.
   intros H.
   induction H.
@@ -839,8 +839,8 @@ Proof.
 Qed.
 
 Lemma pc_ctx_ext (G1 G2 : context)(P : formula) :
-  G1 |= P
-    -> G2 ++ G1 |= P.
+  G1 |-- P
+    -> G2 ++ G1 |-- P.
 Proof.
   intros H.
   induction G2.
@@ -854,8 +854,8 @@ Qed.
 (** Deduction theorem *)
 
 Lemma pc_in (G : context)(P Q : formula) :
-  P :: G |= Q
-    -> G |= P --> Q.
+  P :: G |-- Q
+    -> G |-- P --> Q.
 Proof.
   intros H.
   dependent induction H.
@@ -878,8 +878,8 @@ Proof.
 Qed.
 
 Lemma pc_mp (G : context)(P Q : formula) :
-  G |= P --> Q
-    -> P :: G |= Q.
+  G |-- P --> Q
+    -> P :: G |-- Q.
 Proof.
   intros H.
   apply (pc_ap (P :: G) P Q).
@@ -888,15 +888,15 @@ Proof.
 Qed.
 
 Lemma pc_mp_hyp (G : context)(P Q : formula) :
-  P :: P --> Q :: G |= Q.
+  P :: P --> Q :: G |-- Q.
 Proof.
   apply pc_mp.
   apply pc_as; left; reflexivity.
 Qed.
 
 Lemma pc_mp_var (G : context)(P Q : formula) :
-  G |= P
-    -> G |= (P --> Q) --> Q.
+  G |-- P
+    -> G |-- (P --> Q) --> Q.
 Proof.
   intros H.
   apply pc_in.
@@ -907,9 +907,9 @@ Proof.
 Qed.
 
 Lemma pc_excl (G : context)(P Q : formula) :
-  G |= P
-    -> P :: G |= Q
-    -> G |= Q.
+  G |-- P
+    -> P :: G |-- Q
+    -> G |-- Q.
 Proof.
   intros H1 H2.
   apply (pc_ap G P Q).
@@ -920,8 +920,8 @@ Qed.
 (** context theorems *)
 
 Lemma pc_hyp_elim (G : context)(P Q : formula) :
-  P :: P :: G |= Q
-    -> P :: G |= Q.
+  P :: P :: G |-- Q
+    -> P :: G |-- Q.
 Proof.
   intros H.
   dependent induction H.
@@ -937,8 +937,8 @@ Qed.
 
 Lemma pc_in_hyp_elim (G : context)(P Q : formula) :
   P :- G
-    -> P :: G |= Q
-    -> G |= Q.
+    -> P :: G |-- Q
+    -> G |-- Q.
 Proof.
   intros PinG H.
   dependent induction H.
@@ -955,8 +955,8 @@ Proof.
 Qed.
 
 Lemma pc_swap_hyps (G : context)(P Q R : formula) :
- P :: Q :: G |= R
-  -> Q :: P :: G |= R.
+ P :: Q :: G |-- R
+  -> Q :: P :: G |-- R.
 Proof.
   intros H.
   dependent induction H.
@@ -971,8 +971,8 @@ Proof.
 Qed.
 
 Lemma pc_ctx_sym (G1 G2 : context)(P : formula) :
-  G1 ++ G2 |= P
-    -> G2 ++ G1 |= P.
+  G1 ++ G2 |-- P
+    -> G2 ++ G1 |-- P.
 Proof.
   intros H.
   dependent induction H.
@@ -990,8 +990,8 @@ Proof.
 Qed.
 
 Lemma pc_swap_ctx (G1 G2 : context)(P Q R: formula) :
-  G1 ++ [ P ; Q ] ++ G2 |= R
-    -> G1 ++ [ Q ; P ] ++ G2 |= R.
+  G1 ++ [ P ; Q ] ++ G2 |-- R
+    -> G1 ++ [ Q ; P ] ++ G2 |-- R.
 Proof.
   intros H.
   dependent induction H.
@@ -1021,8 +1021,8 @@ Proof.
 Qed.
 
 Lemma pc_first_hyp_last (G : context)(P Q : formula) :
-  [ P ] ++ G |= Q
-    -> G ++ [ P ] |= Q.
+  [ P ] ++ G |-- Q
+    -> G ++ [ P ] |-- Q.
 Proof.
   intros H.
   dependent induction H.
@@ -1039,8 +1039,8 @@ Proof.
 Qed.
 
 Lemma pc_ctx_split_sym (G1 G2 G3 : context)(P : formula) :
-  G1 ++ G2 ++ G3 |= P
-    -> G2 ++ G1 ++ G3 |= P.
+  G1 ++ G2 ++ G3 |-- P
+    -> G2 ++ G1 ++ G3 |-- P.
 Proof.
   intros H.
   dependent induction H.
@@ -1216,8 +1216,8 @@ Proof.
 Qed.
 
 Lemma pc_ctx_ndf (G : context)(P : formula) :
-  G |= P
-    <-> ndf G |= P.
+  G |-- P
+    <-> ndf G |-- P.
 Proof.
   split; intros * H.
   { dependent induction H.
@@ -1234,8 +1234,8 @@ Proof.
       { unfold ndf in *. apply nodup_In in H; auto. }
       apply pc_as; firstorder.
     }
-    { assert (G |= P --> Q). {apply IHPC1; auto. }
-      assert (G |= P). { apply IHPC2; auto. }
+    { assert (G |-- P --> Q). {apply IHPC1; auto. }
+      assert (G |-- P). { apply IHPC2; auto. }
       apply (pc_ap G P Q); auto.
     }
     { apply pc_K. }
@@ -1245,8 +1245,8 @@ Proof.
 Qed.
 
 Lemma pc_sum_ctx_ndf (G1 G2 : context)(P : formula) :
-  G1 ++ G2 |= P
-    <-> ndf G1 ++ ndf G2 |= P.
+  G1 ++ G2 |-- P
+    <-> ndf G1 ++ ndf G2 |-- P.
 Proof.
   split; intros * H.
   { apply pc_ctx_ndf. apply pc_ctx_ndf in H.
@@ -1260,9 +1260,9 @@ Qed.
 (** Transitivity theorems *)
 
 Lemma pc_asoc (G : context)(P Q R : formula) :
-  G |= P --> Q
-    -> G |= Q --> R
-    -> G |= P --> R.
+  G |-- P --> Q
+    -> G |-- Q --> R
+    -> G |-- P --> R.
 Proof.
   intros H1 H2.
   apply pc_in.
@@ -1272,9 +1272,9 @@ Proof.
 Qed.
 
 Lemma pc_asoc_pc (G : context)(P Q R : formula) :
-  P :: G |= Q
-    -> Q :: G |= R
-    -> P :: G |= R.
+  P :: G |-- Q
+    -> Q :: G |-- R
+    -> P :: G |-- R.
 Proof.
   intros H1 H2.
   apply pc_mp.
@@ -1286,8 +1286,8 @@ Qed.
 (** Contraposition theorems *)
 
 Lemma pc_not_intro (G : context)(P : formula) :
-  G |= P
-    -> G |= ^ ^ P.
+  G |-- P
+    -> G |-- ^ ^ P.
 Proof.
   intros H.
   apply pc_mp_var.
@@ -1295,8 +1295,8 @@ Proof.
 Qed.
 
 Lemma pc_not_elim (G : context)(P : formula) :
-  G |= ^ ^ P
-    -> G |= P.
+  G |-- ^ ^ P
+    -> G |-- P.
 Proof.
   intros H.
   apply (pc_ap G (^ ^ P)).
@@ -1305,8 +1305,8 @@ Proof.
 Qed.
 
 Lemma pc_contr_pc (G : context)(P Q : formula) :
-  G |= P --> Q
-    -> G |= ^ Q --> ^ P.
+  G |-- P --> Q
+    -> G |-- ^ Q --> ^ P.
 Proof.
   intros H.
   apply pc_in. apply pc_in.
@@ -1318,8 +1318,8 @@ Proof.
 Qed.
 
 Lemma pc_contr (G : context)(P Q : formula) :
-  G |= ^ Q --> ^ P
-    -> G |= P --> Q.
+  G |-- ^ Q --> ^ P
+    -> G |-- P --> Q.
 Proof.
   intros H.
   apply pc_mp in H.
@@ -1332,8 +1332,8 @@ Proof.
 Qed.
 
 Lemma pc_contr_hyp (G : context)(P Q : formula) :
-  ^ Q :: G |= ^ P
-    -> P :: G |= Q.
+  ^ Q :: G |-- ^ P
+    -> P :: G |-- Q.
 Proof.
   intros H.
   apply pc_in in H.
@@ -1342,8 +1342,8 @@ Proof.
 Qed.
 
 Lemma pc_contr_hyp_pc (G : context)(P Q : formula) :
-  P :: G |= Q
-    -> ^ Q :: G |= ^ P.
+  P :: G |-- Q
+    -> ^ Q :: G |-- ^ P.
 Proof.
   intros H.
   apply pc_in in H.
@@ -1352,7 +1352,7 @@ Proof.
 Qed.
 
 Lemma pc_contr_var (G : context)(P Q : formula) :
-  G |= (^ Q --> ^ P) --> P --> Q.
+  G |-- (^ Q --> ^ P) --> P --> Q.
 Proof.
   apply pc_in.
   apply pc_contr.
@@ -1360,15 +1360,15 @@ Proof.
 Qed.
 
 Lemma pc_contradiction (G : context)(P : formula) :
-  P :: ^ P :: G |= _|_.
+  P :: ^ P :: G |-- _|_.
 Proof.
   apply pc_mp.
   apply pc_as; left; reflexivity.
 Qed.
 
 Lemma pc_exfalso (G : context)(P : formula) :
-  G |= _|_
-    -> G |= P.
+  G |-- _|_
+    -> G |-- P.
 Proof.
   intros H.
   apply pc_not_elim.
@@ -1377,13 +1377,13 @@ Proof.
 Qed.
 
 Lemma pc_and_imp (G : context)(P Q : formula) :
-  G |= P
-    -> G |= ^ Q
-    -> G |= ^ (P --> Q).
+  G |-- P
+    -> G |-- ^ Q
+    -> G |-- ^ (P --> Q).
 Proof.
   intros.
   apply pc_in.
-  assert (H1 : P --> Q :: G |= Q).
+  assert (H1 : P --> Q :: G |-- Q).
   { apply (pc_mp_var G P Q) in H.
     apply pc_mp in H; auto.
   }
@@ -1394,12 +1394,12 @@ Qed.
 (** Equivalencies of logical functions *)
 
 Lemma pc_and_left (G : context)(P Q : formula) :
-  G |= P and Q
-    -> G |= P.
+  G |-- P and Q
+    -> G |-- P.
 Proof.
   intros H.
   apply pc_not_elim.
-  cut (^ P :: G |= P --> ^ Q).
+  cut (^ P :: G |-- P --> ^ Q).
   { intros H1.
     apply pc_in. apply pc_mp in H.
     apply (pc_asoc_pc G (^ P)(P --> ^ Q)); assumption.
@@ -1413,12 +1413,12 @@ Proof.
 Qed.
 
 Lemma pc_and_right (G : context)(P Q : formula) :
-  G |= P and Q
-    -> G |= Q.
+  G |-- P and Q
+    -> G |-- Q.
 Proof.
   intros H.
   apply pc_not_elim.
-  cut (^ Q :: G |= P --> ^ Q).
+  cut (^ Q :: G |-- P --> ^ Q).
   { intros H1.
     apply pc_in.
     apply pc_mp in H.
@@ -1431,7 +1431,7 @@ Proof.
 Qed.
 
 Lemma pc_and_hyp (G : context)(P Q : formula) :
-  P :: Q :: G |= P and Q.
+  P :: Q :: G |-- P and Q.
 Proof.
   apply pc_swap_hyps.
   apply pc_contr_hyp.
@@ -1443,9 +1443,9 @@ Proof.
 Qed.
 
 Lemma pc_and (G : context)(P Q : formula) :
-  G |= P
-    -> G |= Q
-    -> G |= P and Q.
+  G |-- P
+    -> G |-- Q
+    -> G |-- P and Q.
 Proof.
   intros Hp Hq.
   apply (pc_excl G Q); try assumption.
@@ -1455,8 +1455,8 @@ Proof.
 Qed.
 
 Lemma pc_or_left (G : context)(P Q : formula) :
-  G |= P
-    -> G |= P or Q.
+  G |-- P
+    -> G |-- P or Q.
 Proof.
   intros H. unfold Or in *.
   apply pc_in.
@@ -1467,26 +1467,26 @@ Proof.
 Qed.
 
 Lemma pc_or_right (G : context)(P Q : formula) :
-  G |= Q
-    -> G |= P or Q.
+  G |-- Q
+    -> G |-- P or Q.
 Proof.
   intros H.
   apply pc_ext; assumption.
 Qed.
 
 Lemma pc_or_case (G : context)(P Q R : formula) :
-  P :: G |= R
-    -> Q :: G |= R
-    -> P or Q :: G |= R.
+  P :: G |-- R
+    -> Q :: G |-- R
+    -> P or Q :: G |-- R.
 Proof.
   intros Hp Hq.
-  assert (H0 : ^ R :: G |= ^ P and ^ Q).
+  assert (H0 : ^ R :: G |-- ^ P and ^ Q).
   { apply pc_contr_hyp_pc in Hp.
     apply pc_contr_hyp_pc in Hq.
     apply pc_and; assumption.
   }
   apply pc_contr_hyp.
-  assert (H1 : ^ ((^ P) --> ^ ^ Q) :: G |= ^ ((^ P) --> Q)).
+  assert (H1 : ^ ((^ P) --> ^ ^ Q) :: G |-- ^ ((^ P) --> Q)).
   { apply pc_contr_hyp_pc.
     apply pc_in.
     apply pc_not_intro.
@@ -1502,9 +1502,9 @@ Proof.
 Qed.
 
 Lemma pc_or_case_ctx (G1 G2 : context)(P Q R : formula) :
-  P :: G1 |= R
-    -> Q :: G2 |= R
-    -> (P or Q) :: (G1 ++ G2) |= R.
+  P :: G1 |-- R
+    -> Q :: G2 |-- R
+    -> (P or Q) :: (G1 ++ G2) |-- R.
 Proof.
   intros Hp Hq.
   apply (pc_ctx_ext (P :: G1) G2) in Hp.
@@ -1518,8 +1518,8 @@ Proof.
 Qed.
 
 Lemma pc_tertium_non_datur (G : context)(P Q : formula) :
-  P or ^ P :: G |= Q
-    -> G |= Q.
+  P or ^ P :: G |-- Q
+    -> G |-- Q.
 Proof.
   intros H.
   apply pc_in in H.
@@ -1530,8 +1530,8 @@ Qed.
 (** Soundness *)
 
 Theorem Soundness_general (G : context)(P : formula) :
-  G |= P
-    -> G |-- P.
+  G |-- P
+    -> G |== P.
 Proof.
   intros H.
   induction H.
@@ -1669,7 +1669,7 @@ Proof.
 Qed.
 
 Lemma LiteralsToformula (E : evaluation)(P : formula) :
-  map (Bar E)(Literals P) |= if formulaValue E P then P else ^ P.
+  map (Bar E)(Literals P) |-- if formulaValue E P then P else ^ P.
 Proof.
   intros.
   assert (Hn : exists n, length (Literals P) < n).
@@ -1691,7 +1691,7 @@ Proof.
      exists (formulaValue E P2); auto.
      destruct HP2 as [ vp2 HP2 ]. rewrite HP2 in *.
     destruct (vp1). destruct (vp2); simpl.
-    { cut (map (Bar E)(nds (VarList P2)) |= P2).
+    { cut (map (Bar E)(nds (VarList P2)) |-- P2).
       intros xHP2.
       apply (pc_ctx_ext (map (Bar E)(nds (VarList P2)))
         (map (Bar E)(nds (VarList P1))) P2) in xHP2.
@@ -1703,11 +1703,11 @@ Proof.
       apply length_sum_nodup. unfold nds in H.
       rewrite <- nodup_sum_nodup in H. apply H.
     }
-    { cut (map (Bar E)(Literals P1) |= P1). intros xHP1.
+    { cut (map (Bar E)(Literals P1) |-- P1). intros xHP1.
       apply (pc_ctx_ext (map (Bar E)(Literals P1))
         (map (Bar E)(Literals P2)) P1) in xHP1.
       apply pc_ctx_sym in xHP1.
-      cut (map (Bar E)(Literals P2) |= ^ P2). intros xHP2.
+      cut (map (Bar E)(Literals P2) |-- ^ P2). intros xHP2.
       apply (pc_ctx_ext (map (Bar E)(Literals P2))
         (map (Bar E)(Literals P1)) ^ P2) in xHP2.
       apply pc_and_imp; auto. apply IHP2.
@@ -1725,7 +1725,7 @@ Proof.
       rewrite length_nodup_sum_sym. apply H.
     }
     { simpl.
-      cut (map (Bar E)(Literals P1) |= ^ P1).
+      cut (map (Bar E)(Literals P1) |-- ^ P1).
         intros xHP1. simpl in *.
       apply pc_contr. apply pc_ext.
       apply (pc_ctx_ext (map (Bar E)(Literals P1))
@@ -1810,23 +1810,23 @@ Proof.
 Qed.
 
 Theorem Completeness_empty (P : formula) :
-  |-- P
-    -> |= P.
+  |== P
+    -> |-- P.
 Proof.
   intros H.
   unfold Eq in *. simpl in *.
   assert (VfP : forall E, formulaValue E P = true).
   { intros E. apply H. apply Compatible_empty. }
   clear H.
-  assert (H : forall E, map (Bar E)(Literals P) |= P).
+  assert (H : forall E, map (Bar E)(Literals P) |-- P).
   { intros E.
-    cut (map (Bar E)(Literals P) |= (if formulaValue E P then P else (^ P))).
+    cut (map (Bar E)(Literals P) |-- (if formulaValue E P then P else (^ P))).
     intros. rewrite (VfP E) in H; auto. apply LiteralsToformula.
   }
   unfold Literals in *.
   assert (Hn : forall n,
-    (forall E, map (Bar E)(skipn n (nds (VarList P))) |= P)
-      -> (forall E, map (Bar E)(skipn (S n)(nds (VarList P))) |= P)).
+    (forall E, map (Bar E)(skipn n (nds (VarList P))) |-- P)
+      -> (forall E, map (Bar E)(skipn (S n)(nds (VarList P))) |-- P)).
   { intros n Hn E. rewrite skipn_first.
     assert (H0 : exists x, x = skipn n (nds (VarList P))).
     { exists (skipn n (nds (VarList P))); auto. }
@@ -1836,8 +1836,8 @@ Proof.
     induction x.
     { rewrite <- Hx in *. simpl in *; auto. }
     { intros VfP Hn. simpl. rewrite <- Hx in Hn.
-      { assert (H1 : forall E, Bar E a :: map (Bar  E)x |= P). { apply Hn. }
-        assert (Ha : forall E, # a :: map (Bar  E)x |= P).
+      { assert (H1 : forall E, Bar E a :: map (Bar  E)x |-- P). { apply Hn. }
+        assert (Ha : forall E, # a :: map (Bar  E)x |-- P).
         { intros E.
           rewrite (pro_eq_fun E a true).
           { replace (# a) with (Bar (pro E a true) a).
@@ -1851,7 +1851,7 @@ Proof.
           { intros G. rewrite <- Hx in G. auto. }
           apply skipn_nodup. unfold nds. apply NoDup_nodup.
         }
-        assert (nHa : forall E, (^ # a) :: map (Bar E) x |= P).
+        assert (nHa : forall E, (^ # a) :: map (Bar E) x |-- P).
         { intros E.
           rewrite (pro_eq_fun E a false).
           { replace (^ # a) with (Bar (pro E a false) a).
@@ -1865,21 +1865,21 @@ Proof.
           { intros G. rewrite <- Hx in G. auto. }
           apply skipn_nodup. unfold nds. apply NoDup_nodup.
         }
-        assert (Hor : forall E, (# a or (^ # a)) :: map (Bar E) x |= P).
+        assert (Hor : forall E, (# a or (^ # a)) :: map (Bar E) x |-- P).
         { intros f. apply pc_or_case; auto. }
         intros f. eapply pc_tertium_non_datur. apply Hor.
       }
     }
   }
-  assert (forall E, map (Bar E) [] |= P).
+  assert (forall E, map (Bar E) [] |-- P).
   { eapply list_rev_ind. apply H. intros n H0 f. apply Hn. apply H0. }
   simpl in H0. apply H0.
   split. apply (fun b => true).
 Qed.
 
 Theorem Completeness_general (G : context)(P : formula) :
-  G |-- P
-    -> G |= P.
+  G |== P
+    -> G |-- P.
 Proof.
   intros H.
   generalize P H. clear P H.
@@ -1891,8 +1891,8 @@ Proof.
 Qed.
 
 Theorem prov_equiv_models (G : context)(P : formula) :
-  G |= P
-    <-> G |-- P.
+  G |-- P
+    <-> G |== P.
 Proof.
  split.
  { apply Soundness_general. }
@@ -1901,28 +1901,28 @@ Qed.
 
 (* NATURAL DEDUCTION *)
 
-Reserved Notation " G |== F " (at level 70).
+Reserved Notation " G |--- F " (at level 70).
 Inductive ND : context -> formula -> Prop :=
          | nd_as (G : context)(P : formula) :
              P :- G
-               -> G |== P
+               -> G |--- P
          | nd_ap (G : context)(P Q : formula) :
-             G |== P --> Q
-               -> G |== P
-               -> G |== Q
+             G |--- P --> Q
+               -> G |--- P
+               -> G |--- Q
          | nd_in (G : context)(P Q : formula) :
-             P :: G |== Q
-               -> G |== P --> Q
+             P :: G |--- Q
+               -> G |--- P --> Q
          | nd_nn (G : context)(P : formula) :
-             G |== ^ ^ P
-               -> G |== P
-    where " G |== F " := (ND G F).
-Notation "|== P"
-  := ([] |== P)
+             G |--- ^ ^ P
+               -> G |--- P
+    where " G |--- F " := (ND G F).
+Notation "|--- P"
+  := ([] |--- P)
   (at level 80).
 
 Lemma nd_K (G : context)(P Q : formula) :
-  G |== P --> Q --> P.
+  G |--- P --> Q --> P.
 Proof.
   apply nd_in.
   apply nd_in.
@@ -1931,7 +1931,7 @@ Proof.
 Qed.
 
 Lemma nd_S (G : context)(P Q R : formula) :
-  G |== (P --> Q --> R) --> (P --> Q) --> P --> R.
+  G |--- (P --> Q --> R) --> (P --> Q) --> P --> R.
 Proof.
   apply nd_in.
   apply nd_in.
@@ -1950,7 +1950,7 @@ Proof.
 Qed.
 
 Lemma nd_C (G : context)(P : formula) :
-  G |== ^ ^ P --> P.
+  G |--- ^ ^ P --> P.
 Proof.
   apply nd_in.
   apply nd_nn.
@@ -1958,7 +1958,7 @@ Proof.
 Qed.
 
 Lemma nd_contr (G : context)(P Q : formula) :
-  G |== (^ Q --> ^ P) --> (P --> Q).
+  G |--- (^ Q --> ^ P) --> (P --> Q).
 Proof.
   apply nd_in.
   apply nd_in.
@@ -1974,11 +1974,11 @@ Proof.
        right; left; reflexivity.
 Qed.
 
-(* Equivalence of natural deduction and propositionalal calculus. *)
+(* Equivalence of natural deduction and formulaositionalal calculus. *)
 
 Lemma pc_nd (G : context)(P : formula) :
-  G |= P
-    -> G |== P.
+  G |-- P
+    -> G |--- P.
 Proof.
   intros H.
   induction H.
@@ -1992,8 +1992,8 @@ Proof.
 Qed.
 
 Lemma nd_pc (G : context)(P : formula) :
-  G |== P
-    -> G |= P.
+  G |--- P
+    -> G |-- P.
 Proof.
   intros H.
   dependent induction H.
@@ -2008,8 +2008,8 @@ Proof.
 Qed.
 
 Theorem nd_eq_pc (G : context)(P : formula) :
-  G |== P
-    <-> G |= P.
+  G |--- P
+    <-> G |-- P.
 Proof.
   split.
     apply nd_pc.
@@ -2019,7 +2019,7 @@ Qed.
 (* Theorems of natural deduction. *)
 
 Lemma nd_True (G : context) :
-  G |== truth.
+  G |--- truth.
 Proof.
   apply nd_in.
   apply nd_as.
@@ -2027,7 +2027,7 @@ Proof.
 Qed.
 
 Lemma nd_id (G : context)(P : formula) :
-  G |== P --> P.
+  G |--- P --> P.
 Proof.
   apply nd_in.
   apply nd_as.
@@ -2035,8 +2035,8 @@ Proof.
 Qed.
 
 Lemma nd_ext (G : context)(P Q : formula) :
-  G |== P
-    -> Q :: G |== P.
+  G |--- P
+    -> Q :: G |--- P.
 Proof.
   intros H.
   apply nd_eq_pc in H.
@@ -2046,8 +2046,8 @@ Proof.
 Qed.
 
 Lemma nd_swap_hyps (G : context)(P Q R : formula) :
-  P :: Q :: G |== R
-    -> Q :: P :: G |== R.
+  P :: Q :: G |--- R
+    -> Q :: P :: G |--- R.
 Proof.
   intros H.
   apply nd_eq_pc in H.
