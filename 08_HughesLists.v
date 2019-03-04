@@ -116,7 +116,7 @@ Proof.
   }
 Qed.
 
-Theorem rev_app_distr:
+Theorem reverse_app_distr:
   forall (x y : A),
   reverse (x ++ y) = reverse y ++ reverse x.
 Proof.
@@ -169,14 +169,14 @@ Proof.
   { reflexivity. }
   { simpl.
     replace (a :: x) with ([a] ++ x).
-    { repeat rewrite rev_app_distr. 
+    { repeat rewrite reverse_app_distr.
       rewrite IHx. reflexivity. 
     }
     { reflexivity. }
   }
 Qed.
 
-Theorem rev_injective :
+Theorem reverse_injective :
   forall (x y : A),
   reverse x = reverse y -> x = y.
 Proof.
