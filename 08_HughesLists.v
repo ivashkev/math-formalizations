@@ -78,6 +78,19 @@ Proof.
   apply app_assoc.
 Qed.
 
+Theorem abs_appendR :
+  forall (f g : R),
+  abs (appendR f g) = (abs f) ++ (abs g).
+Proof.
+  intros.
+  destruct (find_rep f) as [ F Hf ].
+  destruct (find_rep g) as [ G Hg ].
+  rewrite Hf. rewrite Hg. rewrite appendR_rep.
+  unfold abs, rep; simpl.
+  repeat rewrite app_nil_r.
+  reflexivity.
+Qed.
+
 Fixpoint rev (x : A) : R :=
   match x with
   | nil => id
@@ -86,18 +99,107 @@ Fixpoint rev (x : A) : R :=
 
 Definition reverse (x : A) := (rev x) [].
 
+Theorem rev_app :
+  forall (x y : A),
+  rev x y = rev x [] ++ y.
+Proof.
+  intros. 
+  induction y as [| h t ].
+  { simpl. rewrite app_nil_r. reflexivity. }
+  { assert (H1 : rev x [] = abs (rev x)). reflexivity.
+    assert (H2 : h :: t = abs (app (h :: t))). 
+    { unfold abs. rewrite app_nil_r. reflexivity. }
+    rewrite H1. rewrite H2 at 2.
+    rewrite <- abs_appendR.
+    unfold appendR, abs, rep; simpl.
+    rewrite app_nil_r. reflexivity.
+  }
+Qed.
+
+Theorem rev_app_distr:
+  forall (x y : A),
+  reverse (x ++ y) = reverse y ++ reverse x.
+Proof.
+  intros.
+  unfold reverse.
+  induction x as [| h t ].
+  { simpl. rewrite app_nil_r. reflexivity. }
+  { simpl.
+    rewrite (rev_app t [h]).
+    rewrite rev_app.
+    rewrite IHt.
+    rewrite app_assoc.
+    reflexivity.
+  }
+Qed.
+
+Theorem app_length :
+  forall x y : A,
+  length (x ++ y) = length x + length y.
+Proof.
+  intros x y. 
+  induction x as [| h t ].
+  { reflexivity. }
+  { simpl. rewrite -> IHt. reflexivity. }
+Qed.
+
+Theorem reverse_length :
+  forall x : A,
+  length (reverse x) = length x.
+Proof.
+  intros x.
+  unfold reverse.
+  induction x as [| h t ].
+  { reflexivity. }
+  { assert (H : rev (h :: t) [] = rev t [] ++ [h]). 
+    { simpl. rewrite rev_app. reflexivity. }
+    rewrite H. 
+    rewrite app_length.
+    rewrite IHt.
+    rewrite PeanoNat.Nat.add_comm.
+    simpl. reflexivity.
+  }
+Qed.
+
+Theorem reverse_involutive :
+  forall x : A,
+  reverse (reverse x) = x.
+Proof.
+  induction x. 
+  { reflexivity. }
+  { simpl.
+    replace (a :: x) with ([a] ++ x).
+    { repeat rewrite rev_app_distr. 
+      rewrite IHx. reflexivity. 
+    }
+    { reflexivity. }
+  }
+Qed.
+
+Theorem rev_injective :
+  forall (x y : A),
+  reverse x = reverse y -> x = y.
+Proof.
+  intros x y reveq.
+  rewrite <- reverse_involutive. 
+  rewrite <- reveq.
+  rewrite -> reverse_involutive.
+  reflexivity.
+Qed.
+
 End Hughes.
 
 Compute reverse [2;3;6;3;6;9].
 
 Compute reverse [true;true;true;false;false;false].
 
+
 End ArrowType.
 
 (* In the next module we change representation type from 
    functional (R := A -> A) to inductive type with additional condition 
-   that we consider only those functions that can be generated with the help
-   of function app\u0435nd.
+   that we consider only those functions on lists that can be generated
+   with the help of the function append.
 *)
 
 Module InductiveType.
@@ -243,4 +345,4 @@ Compute reverse [2;3;6;3;6;9].
 
 Compute reverse [true;true;true;false;false;false].
 
-Module InductiveType.
+End InductiveType.
