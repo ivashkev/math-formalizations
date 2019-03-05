@@ -94,7 +94,7 @@ Qed.
 Fixpoint rev (x : A) : R :=
   match x with
   | nil => id
-  | a :: y => fun t => (rev y) (a :: t)
+  | a :: y => fun (t : A) => (rev y) (a :: t)
   end.
 
 Definition reverse (x : A) := (rev x) [].
@@ -116,7 +116,7 @@ Proof.
   }
 Qed.
 
-Theorem reverse_app_distr:
+Theorem rev_app_distr:
   forall (x y : A),
   reverse (x ++ y) = reverse y ++ reverse x.
 Proof.
@@ -169,14 +169,14 @@ Proof.
   { reflexivity. }
   { simpl.
     replace (a :: x) with ([a] ++ x).
-    { repeat rewrite reverse_app_distr.
+    { repeat rewrite rev_app_distr. 
       rewrite IHx. reflexivity. 
     }
     { reflexivity. }
   }
 Qed.
 
-Theorem reverse_injective :
+Theorem rev_injective :
   forall (x y : A),
   reverse x = reverse y -> x = y.
 Proof.
@@ -325,7 +325,7 @@ Proof.
   set (f := (fix rev (x : A) : A -> A :=
     match x with
     | [] => id
-    | a :: y => fun t : A => rev y (a :: t)
+    | a :: y => fun (t : A) => rev y (a :: t)
     end)).
   exists (f x).
   exists ((f x) []).
@@ -338,6 +338,100 @@ Proof.
 Defined.
 
 Definition reverse (x : A) := func (rev x) [].
+
+Theorem rev_app :
+  forall (x y : A),
+  func (rev x) y = func (rev x) [] ++ y.
+Proof.
+  intros. 
+  induction y as [| h t ].
+  { rewrite app_nil_r. reflexivity. }
+  { assert (H1 : func (rev x) [] = abs (rev x)). reflexivity.
+    assert (H2 : h :: t = abs (rep (h :: t))). 
+    { unfold abs, rep. rewrite app_nil_r. reflexivity. }
+    rewrite H1. rewrite H2 at 2.
+    rewrite <- abs_appendR.
+    unfold appendR, abs, rep; simpl.
+    rewrite app_nil_r. reflexivity.
+  }
+Qed.
+
+Theorem rev_app_distr:
+  forall (x y : A),
+  reverse (x ++ y) = reverse y ++ reverse x.
+Proof.
+  intros.
+  unfold reverse.
+  induction x as [| h t ].
+  { simpl. rewrite app_nil_r. reflexivity. }
+  { replace (func (rev ((h :: t) ++ y)) []) with (func (rev (t ++ y)) [h]).
+    replace (func (rev (h :: t)) []) with (func (rev t) [h]).
+    rewrite (rev_app t [h]).
+    rewrite rev_app.
+    rewrite IHt.
+    rewrite app_assoc.
+    reflexivity.
+    reflexivity.
+    reflexivity.
+  }
+Qed.
+
+Theorem app_length :
+  forall x y : A,
+  length (x ++ y) = length x + length y.
+Proof.
+  intros x y. 
+  induction x as [| h t ].
+  { reflexivity. }
+  { simpl. rewrite -> IHt. reflexivity. }
+Qed.
+
+Theorem reverse_length :
+  forall x : A,
+  length (reverse x) = length x.
+Proof.
+  intros x.
+  unfold reverse.
+  induction x as [| h t ].
+  { reflexivity. }
+  { assert (H : func (rev (h :: t)) [] = func (rev t) [] ++ [h]). 
+    { replace (func (rev (h :: t)) []) with (func (rev t) [h]).
+      rewrite rev_app. reflexivity.
+      reflexivity.
+    }
+    rewrite H. 
+    rewrite app_length.
+    rewrite IHt.
+    rewrite PeanoNat.Nat.add_comm.
+    simpl. reflexivity.
+  }
+Qed.
+
+Theorem reverse_involutive :
+  forall x : A,
+  reverse (reverse x) = x.
+Proof.
+  induction x. 
+  { reflexivity. }
+  { simpl.
+    replace (a :: x) with ([a] ++ x).
+    { repeat rewrite rev_app_distr. 
+      rewrite IHx. reflexivity. 
+    }
+    { reflexivity. }
+  }
+Qed.
+
+Theorem rev_injective :
+  forall (x y : A),
+  reverse x = reverse y -> x = y.
+Proof.
+  intros x y reveq.
+  rewrite <- reverse_involutive. 
+  rewrite <- reveq.
+  rewrite -> reverse_involutive.
+  reflexivity.
+Qed.
 
 End Hughes.
 
