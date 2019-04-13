@@ -9,3 +9,4 @@ This project is focused on the formalization of some elementary mathematical the
 5. Untyped lambda calculus
 7. Constructive axiomatics for plane Euclidean geometry
 8. Hughes algorithm for list reverse function
+9. Example of Goedel's Incompleteness Theorem
