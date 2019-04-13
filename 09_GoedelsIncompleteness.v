@@ -136,7 +136,7 @@ Axiom provable_true :
    sentences but only that the machine never prints any 
    false ones.
 *)
-Theorem true_P : 
+Lemma true_P : 
   forall (X : expression), 
   provable X
     <-> true ((# P) [ X ]).
@@ -152,7 +152,7 @@ Proof.
     rewrite H3 in H2; auto.
   }
 Qed.
-Theorem true_PF : 
+Lemma true_PF : 
   forall (X : expression), 
   provable (norm X)
     <-> true ((# PF) [ X ]).
@@ -168,7 +168,7 @@ Proof.
     rewrite H3 in H2; auto.
   }
 Qed.
-Theorem true_NP : 
+Lemma true_NP : 
   forall (X : expression), 
   ~ provable X
     <-> true ((# NP) [ X ]).
@@ -185,7 +185,7 @@ Proof.
     rewrite H3; auto.
   }
 Qed.
-Theorem true_NPF : 
+Lemma true_NPF : 
   forall (X : expression), 
   ~ provable (norm X)
     <-> true ((# NPF) [ X ]).
@@ -237,7 +237,7 @@ Proof.
   intros. contradict H. apply true_NPF; auto.
 Qed.
 
-Lemma non_provable_Goedel : 
+Theorem non_provable_Goedel : 
   ~ provable Goedel.
 Proof.
   intros H.
@@ -248,7 +248,7 @@ Proof.
   unfold Goedel. simpl; auto.
 Qed.
 
-Lemma true_Goedel : 
+Theorem true_Goedel : 
   true Goedel.
 Proof.
   apply true_non_provable_Goedel.
