@@ -9,7 +9,7 @@
  April 13, 2019
 
  Abstract: In this file, we formalize the first chapter from 
-           Raymond Smullyan’s book “Incompleteness Theorems”, 
+           Raymond Smullyan’s book “Goedel's Incompleteness Theorems”, 
            where a simplified example of incompleteness is given. 
            The entire text of the comments below is taken from the book.
 *)
