@@ -15,10 +15,10 @@
  
 *)
 
-Require Import Coq.Program.Equality.
 Require Import List.
 Import ListNotations.
-Notation "x :- L" := (In x L)(at level 20).
+Notation "x @ L"
+  := (In x L)(at level 20).
 
 Definition eq_nat_dec :
   forall x y : nat, { x = y } + { x <> y }.
@@ -33,8 +33,8 @@ Defined.
 (* ALPHABET *)
 
 (* propositional symbols: P1, P2, P3 ... *)
-Definition symbol := nat.
-
+Definition symbol
+  := nat.
 Definition word : Set
   := list symbol.
 Definition nds : word -> word
@@ -42,11 +42,11 @@ Definition nds : word -> word
 
 (* LANGUAGE *)
 
-Inductive formula : Set :=
-         | falsehood : formula
-         | variable  : symbol -> formula
-         | implies   : formula -> formula -> formula
-         .
+Inductive formula : Set
+  := falsehood : formula
+   | variable  : symbol -> formula
+   | implies   : formula -> formula -> formula
+   .
 
 (* language is decidable *)
 Definition eq_formula_dec :
@@ -111,28 +111,30 @@ Notation "P <--> Q"
 
 (* VALUE OF SYMBOLS AND FORMULAE *)
 
-Record evaluation : Type := eval { symbolValue : symbol -> bool }.
+Record evaluation : Type
+  := eval { symbolValue : symbol -> bool }.
 
-Fixpoint formulaValue (E : evaluation)(P : formula) : bool :=
-  match P with
-  | falsehood   => false
-  | variable x  => symbolValue E x
-  | implies A B => if (formulaValue E A)
-                   then (formulaValue E B)
-                   else true
-  end.
+Fixpoint formulaValue (E : evaluation)(P : formula) : bool
+  := match P with
+     | falsehood   => false
+     | variable x  => symbolValue E x
+     | implies A B => if (formulaValue E A)
+                      then (formulaValue E B)
+                      else true
+     end.
 
 Definition Compatible (E : evaluation)(G : context) : Prop
-  := forall (P : formula), P :- G -> formulaValue E P = true.
+  := forall (P : formula),
+     P @ G -> formulaValue E P = true.
 
 Definition Eq (G : context)(P Q : formula) : Prop
   := forall (E : evaluation),
      Compatible E G -> formulaValue E P = formulaValue E Q.
-Notation "G |== [ P ] == [ Q ]"
+Notation "G |== [ P == Q ]"
   := (Eq G P Q)
   (at level 80, right associativity).
 Notation "G |== P"
-  := (G |== [ P ] == [ truth ])
+  := (G |== [ P == truth ])
   (at level 80).
 Notation "|== P"
   := ([] |== P)
@@ -222,7 +224,7 @@ Qed.
 (* PROPOSITIONAL ALGEBRA *)
 
 Lemma pa_as (G : context)(P : formula) :
-  P :- G
+  P @ G
     -> G |== P.
 Proof.
   unfold Eq, Compatible.
@@ -337,12 +339,11 @@ Lemma pa_in (G : context)(P Q : formula) :
     -> G |== P --> Q.
 Proof with eauto.
   unfold Eq; simpl; intros.
-  assert (Compatible E (P :: G) -> formulaValue E Q = true)...
-  clear H.
+  specialize H with E.
   destruct (formulaValue E Q); simpl;
   try reflexivity; simpl in *; firstorder.
   { destruct (formulaValue E P); simpl... }
-  { rewrite Compatible_ext_hyp in H1.
+  { rewrite Compatible_ext_hyp in H.
     destruct (formulaValue E P); simpl...
   }
 Qed.
@@ -611,7 +612,7 @@ Proof.
 Qed.
 
 Lemma DoubleNegationLaw (G : context)(P : formula) :
-  G |== [ ^ ^ P ] == [ P ].
+  G |== [ ^ ^ P == P ].
 Proof.
   unfold Eq.
   intros; simpl.
@@ -630,7 +631,7 @@ Proof.
 Qed.
 
 Lemma iffEq (G : context)(P Q : formula) :
-  G |== [ P ] == [ Q ]
+  G |== [ P == Q ]
     <->  G |== P <--> Q.
 Proof.
   unfold Eq.
@@ -651,7 +652,7 @@ Proof.
 Qed.
 
 Lemma LawOfContradiction (G : context)(P : formula) :
-  G |== [ P and ^ P ] == [ _|_ ].
+  G |== [ P and ^ P == _|_ ].
 Proof.
   unfold Eq, And.
   intros; simpl.
@@ -660,7 +661,7 @@ Proof.
 Qed.
 
 Lemma And_sym (G : context)(P Q : formula) :
-  G |== [ P and Q ] == [ Q and P ].
+  G |== [ P and Q == Q and P ].
 Proof.
   unfold Eq, And.
   intros; simpl.
@@ -670,7 +671,7 @@ Proof.
 Qed.
 
 Lemma Or_sym (G : context)(P Q : formula) :
-  G |== [ P or Q ] == [ Q or P ].
+  G |== [ P or Q == Q or P ].
 Proof.
   unfold Eq, Or.
   intros; simpl.
@@ -680,7 +681,7 @@ Proof.
 Qed.
 
 Lemma And_assoc (G : context)(P Q R : formula) :
-  G |== [ P and (Q and R) ] == [ (P and Q) and R ].
+  G |== [ P and (Q and R) == (P and Q) and R ].
 Proof.
   unfold Eq, And.
   intros; simpl.
@@ -691,7 +692,7 @@ Proof.
 Qed.
 
 Lemma Or_assoc (G : context)(P Q R : formula):
-  G |== [ P or (Q or R) ] == [ (P or Q) or R ].
+  G |== [ P or (Q or R) == (P or Q) or R ].
 Proof.
   unfold Eq, Or.
   intros; simpl.
@@ -702,7 +703,7 @@ Proof.
 Qed.
 
 Lemma And_distib (G : context)(P Q R : formula) :
-  G |== [ (P or Q) and R ] == [ (P and R) or (Q and R) ].
+  G |== [ (P or Q) and R == (P and R) or (Q and R) ].
 Proof.
   unfold Eq, And, Or.
   intros; simpl.
@@ -713,7 +714,7 @@ Proof.
 Qed.
 
 Lemma Or_distib (G : context)(P Q R : formula) :
-  G |== [ (P and Q) or R ] == [ (P or R) and (Q or R) ].
+  G |== [ (P and Q) or R == (P or R) and (Q or R) ].
 Proof.
   unfold Eq, And, Or.
   intros; simpl.
@@ -724,7 +725,7 @@ Proof.
 Qed.
 
 Lemma Impl_equiv (G : context)(P Q : formula) :
-  G |== [ P --> Q ] == [ ^ P or Q ].
+  G |== [ P --> Q == ^ P or Q ].
 Proof.
   unfold Eq, And, Or.
   intros; simpl.
@@ -734,7 +735,7 @@ Proof.
 Qed.
 
 Lemma DeMorgan_And (G : context)(P Q : formula) :
-  G |== [ ^ (P and Q) ] == [ ^ P or ^ Q ].
+  G |== [ ^ (P and Q) == ^ P or ^ Q ].
 Proof.
   unfold Eq, And, Or.
   intros; simpl.
@@ -744,7 +745,7 @@ Proof.
 Qed.
 
 Lemma DeMorgan_Or (G : context)(P Q : formula) :
-  G |== [ ^ (P or Q) ] == [ ^ P and ^ Q ].
+  G |== [ ^ (P or Q) == ^ P and ^ Q ].
 Proof.
   unfold Eq, And, Or.
   intros; simpl.
@@ -754,7 +755,7 @@ Proof.
 Qed.
 
 Lemma Absorbtion_And (G : context)(P Q : formula) :
-  G |== [ (P and Q) or P ] == [ P ].
+  G |== [ (P and Q) or P == P ].
 Proof.
   unfold Eq, And, Or.
   intros; simpl.
@@ -764,7 +765,7 @@ Proof.
 Qed.
 
 Lemma Absorbtion_Or (G : context)(P Q : formula) :
-  G |== [ P or (Q and P) ] == [ P ].
+  G |== [ P or (Q and P) == P ].
 Proof.
   unfold Eq, And, Or.
   intros; simpl.
@@ -776,21 +777,19 @@ Qed.
 (* PROPOSITIONAL CALCULUS *)
 
 Reserved Notation "G |-- F" (at level 70).
-Inductive PC : context -> formula -> Prop :=
-         | pc_as (G : context)(P : formula) :
-             P :- G
-               -> G |-- P
-         | pc_ap (G : context)(P Q : formula) :
-             G |-- P --> Q
-               -> G |-- P
-               -> G |-- Q
-         | pc_K (G : context)(P Q : formula) :
-             G |-- P --> (Q --> P)
-         | pc_S (G : context)(P Q R: formula) :
-             G |-- (P --> Q --> R) --> (P --> Q) --> (P --> R)
-         | pc_C (G : context)(P : formula) :
-             G |-- ^ ^ P --> P
-    where "G |-- F" := (PC G F).
+Inductive PC : context -> formula -> Prop
+  := pc_as (G : context)(P : formula) : 
+       P @ G -> G |-- P
+   | pc_ap (G : context)(P Q : formula) : 
+       G |-- P --> Q -> G |-- P -> G |-- Q
+   | pc_K (G : context)(P Q : formula) : 
+       G |-- P --> (Q --> P)
+   | pc_S (G : context)(P Q R: formula) : 
+       G |-- (P --> Q --> R) --> (P --> Q) --> (P --> R)
+   | pc_C (G : context)(P : formula) : 
+       G |-- ^ ^ P --> P
+where "G |-- F"
+  := (PC G F).
 
 Notation "|-- P"
   := ([] |-- P)
@@ -858,19 +857,22 @@ Lemma pc_in (G : context)(P Q : formula) :
     -> G |-- P --> Q.
 Proof.
   intros H.
-  dependent induction H.
-  { destruct H.
+  remember (P :: G) as G'.
+  induction H; subst.
+  { intros.
+    destruct H.
     { subst P0; apply pc_impl_refl. }
     { apply pc_ext; apply pc_as; assumption. }
   }
-  { specialize (IHPC1 G P (JMeq_refl (P :: G))).
-    specialize (IHPC2 G P (JMeq_refl (P :: G))).
+  { intros.
     apply (pc_ap G (P --> P0)).
     { apply (pc_ap G (P --> P0 --> Q)).
       { apply pc_S. }
       apply IHPC1.
+      reflexivity.
     }
     apply IHPC2.
+    reflexivity.
   }
   { apply pc_ext; apply pc_K. }
   { apply pc_ext; apply pc_S. }
@@ -924,7 +926,8 @@ Lemma pc_hyp_elim (G : context)(P Q : formula) :
     -> P :: G |-- Q.
 Proof.
   intros H.
-  dependent induction H.
+  remember (P :: P :: G) as G'.
+  induction H; subst.
   { apply pc_as; firstorder. }
   { apply (pc_ap (P :: G) P0).
     { apply IHPC1; reflexivity. }
@@ -936,12 +939,13 @@ Proof.
 Qed.
 
 Lemma pc_in_hyp_elim (G : context)(P Q : formula) :
-  P :- G
+  P @ G
     -> P :: G |-- Q
     -> G |-- Q.
 Proof.
   intros PinG H.
-  dependent induction H.
+  remember (P :: G) as G'.
+  induction H; subst.
   { apply in_inv in H.
     destruct H; subst; apply pc_as; firstorder.
   }
@@ -959,7 +963,8 @@ Lemma pc_swap_hyps (G : context)(P Q R : formula) :
   -> Q :: P :: G |-- R.
 Proof.
   intros H.
-  dependent induction H.
+  remember (P :: Q :: G) as G'.
+  induction H; subst.
   { apply pc_as; firstorder. }
   { apply (pc_ap (Q :: P :: G) P0).
     { apply IHPC1; reflexivity. }
@@ -975,7 +980,8 @@ Lemma pc_ctx_sym (G1 G2 : context)(P : formula) :
     -> G2 ++ G1 |-- P.
 Proof.
   intros H.
-  dependent induction H.
+  remember (G1 ++ G2) as G'.
+  induction H; subst.
   { apply pc_as; firstorder.
     apply in_app_or in H.
     destruct H; apply in_or_app; [right|left]; assumption.
@@ -994,7 +1000,8 @@ Lemma pc_swap_ctx (G1 G2 : context)(P Q R: formula) :
     -> G1 ++ [ Q ; P ] ++ G2 |-- R.
 Proof.
   intros H.
-  dependent induction H.
+  remember (G1 ++ [P; Q] ++ G2) as G'.
+  induction H; subst.
   { apply pc_as; firstorder.
     destruct (in_app_or (G1)([P; Q] ++ G2) P0).
     { assumption. }
@@ -1025,7 +1032,8 @@ Lemma pc_first_hyp_last (G : context)(P Q : formula) :
     -> G ++ [ P ] |-- Q.
 Proof.
   intros H.
-  dependent induction H.
+  remember ([P] ++ G) as G'.
+  induction H; subst.
   { apply pc_as; firstorder.
     subst; firstorder.
   }
@@ -1043,7 +1051,8 @@ Lemma pc_ctx_split_sym (G1 G2 G3 : context)(P : formula) :
     -> G2 ++ G1 ++ G3 |-- P.
 Proof.
   intros H.
-  dependent induction H.
+  remember (G1 ++ G2 ++ G3) as G'.
+  induction H; subst.
   { apply pc_as; firstorder.
     apply in_app_or in H.
     destruct H; apply in_or_app.
@@ -1135,7 +1144,7 @@ Proof.
       contradiction.
     }
     { rewrite H.
-      assert (~ a :- nodup decA L).
+      assert (~ a @ nodup decA L).
       { contradict n. apply nodup_In in n; auto. }
       assert (nodup decA (a :: nodup decA L)
         = a :: nodup decA (nodup decA L)).
@@ -1220,8 +1229,8 @@ Lemma pc_ctx_ndf (G : context)(P : formula) :
     <-> ndf G |-- P.
 Proof.
   split; intros * H.
-  { dependent induction H.
-    { assert (P :- ndf G). apply nodup_In; auto.
+  { induction H.
+    { assert (P @ ndf G). apply nodup_In; auto.
       apply pc_as; firstorder.
     }
     { apply (pc_ap (ndf G) P Q); auto. }
@@ -1229,8 +1238,9 @@ Proof.
     { apply pc_S. }
     { apply pc_C. }
   }
-  { dependent induction H.
-    { assert (P :- G).
+  { remember (ndf G) as G'.
+    induction H; subst.
+    { assert (P @ G).
       { unfold ndf in *. apply nodup_In in H; auto. }
       apply pc_as; firstorder.
     }
@@ -1544,12 +1554,12 @@ Qed.
 
 (** Completeness *)
 
-Fixpoint VarList (P : formula) : word :=
-  match P with
-  | _|_ => []
-  | # Q => [Q]
-  | Q --> R => VarList Q ++ VarList R
-  end.
+Fixpoint VarList (P : formula) : word
+  := match P with
+     | _|_ => []
+     | # Q => [Q]
+     | Q --> R => VarList Q ++ VarList R
+     end.
 
 Definition Literals (P : formula) : word
   := nds (VarList P).
@@ -1741,14 +1751,14 @@ Proof.
   }
 Qed.
 
-Definition pro (E : evaluation)(x : symbol)(b : bool) : evaluation :=
-  {| symbolValue := fun y : symbol => if eq_nat_dec x y
-                                      then b
-                                      else symbolValue E y
-  |}.
+Definition pro (E : evaluation)(x : symbol)(b : bool) : evaluation
+  := {| symbolValue := fun y : symbol => if eq_nat_dec x y
+                                         then b
+                                         else symbolValue E y
+     |}.
 
 Lemma pro_eq_fun (E : evaluation)(x : symbol)(b : bool)(w : word) :
-  ~ x :- w
+  ~ x @ w
     -> map (Bar E) w = map (Bar (pro E x b)) w.
 Proof.
   intros * H. generalize b E x H; clear b E x H.
@@ -1768,7 +1778,7 @@ Proof.
     rewrite Hg. unfold Bar, pro.
     intros s naeqs; simpl.
     destruct (eq_nat_dec x s); auto. subst; auto. contradict naeqs; auto.
-  assert (forall t, ~ x :- t -> map (Bar E) t = map (Bar g) t).
+  assert (forall t, ~ x @ t -> map (Bar E) t = map (Bar g) t).
     intros t naint. induction t. simpl; auto.
     unfold map. rewrite H2. unfold map in IHt. rewrite IHt; auto.
     contradict naint. right; auto. contradict naint. subst. left; auto.
@@ -1902,21 +1912,17 @@ Qed.
 (* NATURAL DEDUCTION *)
 
 Reserved Notation " G |--- F " (at level 70).
-Inductive ND : context -> formula -> Prop :=
-         | nd_as (G : context)(P : formula) :
-             P :- G
-               -> G |--- P
-         | nd_ap (G : context)(P Q : formula) :
-             G |--- P --> Q
-               -> G |--- P
-               -> G |--- Q
-         | nd_in (G : context)(P Q : formula) :
-             P :: G |--- Q
-               -> G |--- P --> Q
-         | nd_nn (G : context)(P : formula) :
-             G |--- ^ ^ P
-               -> G |--- P
-    where " G |--- F " := (ND G F).
+Inductive ND : context -> formula -> Prop
+  := nd_as (G : context)(P : formula) :
+       P @ G -> G |--- P
+   | nd_ap (G : context)(P Q : formula) :
+       G |--- P --> Q -> G |--- P -> G |--- Q
+   | nd_in (G : context)(P Q : formula) : 
+       P :: G |--- Q -> G |--- P --> Q
+   | nd_nn (G : context)(P : formula) :
+       G |--- ^ ^ P -> G |--- P
+where " G |--- F "
+  := (ND G F).
 Notation "|--- P"
   := ([] |--- P)
   (at level 80).
@@ -1996,7 +2002,7 @@ Lemma nd_pc (G : context)(P : formula) :
     -> G |-- P.
 Proof.
   intros H.
-  dependent induction H.
+  induction H.
     apply pc_as; assumption.
   apply (pc_ap G P).
     apply IHND1.
