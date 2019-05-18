@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 (* 
 
   FORMALIZATION OF UNTYPED LAMBDA CALCULUS
@@ -27,6 +28,37 @@ Definition word : Set
   := list symbol.
 
 Definition nds : word -> word
+=======
+(* 
+
+  FORMALIZATION OF UNTYPED LAMBDA CALCULUS
+
+  Evgeny V Ivashkevich
+ 
+  E-mail: ivashkev@yandex.ru
+
+  January 29, 2019
+
+  Abstract: In this file we formalize untyped lambda calculus.
+            We borrowed a lot from Gerard Huet's formalization in 
+            Coq's repository "https://github.com/coq-contribs/lambda".
+ 
+*)
+
+Require Import Arith Omega List.
+Import ListNotations.
+
+(********************************************************************)
+(*                          Definitions                             *)
+(********************************************************************)
+
+Definition Symbol
+  := nat.
+Definition Context : Set
+  := list Symbol.
+
+Definition nodups : Context -> Context
+>>>>>>> 70144b56e2013a7ab47b44a81e473ba42289a808
   := nodup eq_nat_dec.
 
 Fixpoint insert (w : word)(x : symbol) : word
@@ -57,7 +89,7 @@ Definition newSymbol (w : word)
   := getSymbol (sort w) 1.
 
 (********************************************************************)
-(*                          Terms                             *)
+(*                          Terms                                   *)
 (********************************************************************)
 
 Inductive Term : Set
