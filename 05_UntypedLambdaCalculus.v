@@ -21,43 +21,48 @@ Import ListNotations.
 (*                          Definitions                             *)
 (********************************************************************)
 
-Definition Symbol
+Definition symbol
   := nat.
-Definition Context : Set
-  := list Symbol.
+Definition word : Set
+  := list symbol.
 
-Definition nodups : Context -> Context
+Definition nds : word -> word
   := nodup eq_nat_dec.
 
-Fixpoint remove (G : Context)(x : Symbol) : Context
-  := match G with
-     | [] => []
-     | hG :: tG => if eq_nat_dec x hG
-                   then remove tG x
-                   else hG :: (remove tG x)
-     end.
-
-Fixpoint insert (G : Context)(x : Symbol) : Context
-  := match G with
+Fixpoint insert (w : word)(x : symbol) : word
+  := match w with
      | [] => [x]
-     | hG :: tG => if le_lt_dec x hG
-                   then x :: hG :: tG
-                   else hG :: insert tG x
+     | h :: t => if le_lt_dec x h
+                 then x :: h :: t
+                 else h :: insert t x
      end.
 
-Fixpoint sort (G : Context) : Context
-  := match G with
+Fixpoint sort (w : word) : word
+  := match w with
      | [] => []
-     | hG :: tG => insert (sort tG) hG
+     | h :: t => insert (sort t) h
      end.
+
+Fixpoint getSymbol (w : word)(x : symbol) : symbol
+  := match w with
+     | [] => x
+     | h :: t => if eq_nat_dec h x
+                 then getSymbol t (S x)
+                 else if le_gt_dec h x
+                      then getSymbol t x
+                      else x
+     end.
+
+Definition newSymbol (w : word)
+  := getSymbol (sort w) 1.
 
 (********************************************************************)
 (*                          Terms                             *)
 (********************************************************************)
 
 Inductive Term : Set
-  := | Var : Symbol -> Term
-     | Lam : Symbol -> Term -> Term
+  := | Var : symbol -> Term
+     | Lam : symbol -> Term -> Term
      | App : Term -> Term -> Term
      .
 Notation "# n"
@@ -79,47 +84,34 @@ Notation "'\' n m p q '->' x"
   := (\n -> (\m -> (\p -> (\q -> x))))
      (at level 25, n at level 0, m at level 0, p at level 0, q at level 0, left associativity).
 
-Fixpoint freeVariables (T : Term) : Context
+Fixpoint freeVariables (T : Term) : word
   := match T with
      | Var k => [k]
-     | Lam n t => remove (freeVariables t) n
-     | App u v  => nodups ((freeVariables u) ++ (freeVariables v))
+     | Lam n t => remove eq_nat_dec n (freeVariables t)
+     | App u v  => nds ((freeVariables u) ++ (freeVariables v))
      end.
 
 (********************************************************************)
 (*                          de Brujin Numbering                     *)
 (********************************************************************)
 
-Fixpoint Pth (G : Context)(x : Symbol) : nat
-  := match G with
+Fixpoint Pth (w : word)(x : symbol) : nat
+  := match w with
      | [] => O
-     | hG :: tG => if eq_nat_dec x hG
-                   then S O
-                   else S (Pth tG x)
+     | h :: t => if eq_nat_dec x h
+                 then S O
+                 else S (Pth t x)
      end.
 
-Fixpoint Nth (G : Context)(n : nat) : Symbol
-  := match G with
+Fixpoint Nth (w : word)(n : nat) : symbol
+  := match w with
      | [] => O
-     | hG :: tG => match n with
-                   | O => O
-                   | S O => hG
-                   | S m => Nth tG m
-                   end
+     | h :: t => match n with
+                 | O => O
+                 | S O => h
+                 | S m => Nth t m
+                 end
      end.
-
-Fixpoint getSymbol (G : Context)(x : Symbol) : Symbol
-  := match G with
-     | [] => x
-     | hG :: tG => if eq_nat_dec hG x
-                   then getSymbol tG (S x)
-                   else if le_gt_dec hG x
-                        then getSymbol tG x
-                        else x
-     end.
-
-Definition newSymbol (G : Context)
-  := getSymbol (sort G) 1.
 
 Inductive term : Set
   := | var : nat -> term
@@ -127,18 +119,18 @@ Inductive term : Set
      | app : term -> term -> term
      .
 
-Fixpoint removeSymbols (G : Context)(T : Term) : term
+Fixpoint removeSymbols (w : word)(T : Term) : term
   := match T with
-     | Var k => var (Pth G k)
-     | Lam n t => lam (removeSymbols (n :: G) t)
-     | App u v  => app (removeSymbols G u)(removeSymbols G v)
+     | Var k => var (Pth w k)
+     | Lam n t => lam (removeSymbols (n :: w) t)
+     | App u v  => app (removeSymbols w u)(removeSymbols w v)
      end.
 
-Fixpoint restoreSymbols (G : Context)(t : term) : Term
+Fixpoint restoreSymbols (w : word)(t : term) : Term
   := match t with
-     | var k => Var (Nth G k)
-     | lam t => Lam (newSymbol G)(restoreSymbols ((newSymbol G) :: G) t)
-     | app u v  => App (restoreSymbols G u)(restoreSymbols G v)
+     | var k => Var (Nth w k)
+     | lam t => Lam (newSymbol w)(restoreSymbols ((newSymbol w) :: w) t)
+     | app u v  => App (restoreSymbols w u)(restoreSymbols w v)
      end.
 
 (********************************************************************)
@@ -181,12 +173,12 @@ Notation "t [ <- s ]"
 (*                          Shift Theorems                          *)
 (********************************************************************)
 
-Lemma shift_0 :
-  forall (t : term)(m : nat),
-  t ! 1 ^ m = t.
+Lemma shift_0 (t : term)(n : nat) :
+  t ! 1 ^ n = t.
 Proof.
+  generalize dependent n.
   induction t; intros; simpl.
-  { destruct (le_gt_dec n m);
+  { destruct (le_gt_dec n n0);
     replace (n + 1 - 1) with n by omega; 
     reflexivity.
   }
@@ -194,13 +186,14 @@ Proof.
   { rewrite IHt1; rewrite IHt2; reflexivity. }
 Qed.
 
-Lemma shift_1 :
-  forall (t : term)(n m i j : nat),
+Lemma shift_1 (t : term)(n m i j : nat) :
   m <= j
     -> j < n + m
     -> (t ! n ^ m) ! i ^ j = t ! (n + i - 1) ^ m.
 Proof.
-  intro t; 
+  generalize dependent n.
+  generalize dependent m.
+  generalize dependent j.
   induction t; 
   intros; simpl.
   { destruct (le_gt_dec n m); simpl.
@@ -214,14 +207,15 @@ Proof.
   { rewrite IHt1; auto; rewrite IHt2; auto. }
 Qed.
 
-Lemma shift_2:
-  forall (t : term)(n m i j : nat),
+Lemma shift_2 (t : term)(n m i j : nat) :
   i > 0
     -> n > 0
     -> m + n <= j + 1
     -> (t ! n ^ m) ! i ^ j = (t ! i ^ (j + 1 - n)) ! n ^ m.
 Proof.
-  intro t; 
+  generalize dependent n.
+  generalize dependent m.
+  generalize dependent j.
   induction t; 
   intros; simpl.
   { destruct (le_gt_dec n m); destruct (le_gt_dec n (j + 1 - n0)); simpl.
@@ -240,21 +234,20 @@ Proof.
   { rewrite IHt1; intuition;  rewrite IHt2; intuition;  reflexivity. }
 Qed.
 
-Lemma shift_shift :
-  forall (t : term)(n m : nat),
+Lemma shift_shift (t : term)(n m : nat) :
   m > 0
     -> (t ! m) ! n  = t ! (m + n - 1).
 Proof.
   intros; apply shift_1; omega.
 Qed.
 
-Lemma subst_1:
-  forall (a b : term)(i k n : nat),
+Lemma subst_1 (t s : term)(i k n : nat) :
   k < n
     -> n <= k + i
-    -> a ! i ^ k = (a ! (S i) ^ k) [ n <- b ].
+    -> t ! i ^ k = (t ! (S i) ^ k) [ n <- s ].
 Proof.
-  intros t; 
+  generalize dependent n.
+  generalize dependent k.
   induction t; 
   intros; simpl.
   { destruct (le_gt_dec n k); simpl.
@@ -270,13 +263,13 @@ Proof.
   { rewrite <- IHt1; intuition;  rewrite <- 1IHt2; intuition;  reflexivity. }
 Qed.
 
-Lemma subst_2:
-  forall (a b : term)(i k n : nat),
+Lemma subst_2 (t s : term)(i k n : nat) :
   i > 0
     -> k + i <= n
-    -> (a ! i ^ k) [ n <- b ] = (a [ n - i + 1 <- b ] ) ! i ^ k.
+    -> (t ! i ^ k) [ n <- s ] = (t [ n - i + 1 <- s ] ) ! i ^ k.
 Proof.
-  intros t;
+  generalize dependent n.
+  generalize dependent k.
   induction t; 
   intros; simpl.
   { destruct (le_gt_dec n k); simpl.
@@ -299,14 +292,14 @@ Proof.
   { rewrite <- IHt1; intuition;  rewrite <- 1IHt2; intuition;  reflexivity. }
 Qed.
 
-Lemma subst_3:
-  forall (a b : term)(i k n : nat),
+Lemma subst_3 (t s : term)(i k n : nat) :
   i > 0
     -> n > 0
     -> n <= k + 1
-    -> (a [ n <- b ]) ! i ^ k = (a ! i ^ (k + 1)) [ n <- b ! i ^ (k + 1 - n) ].
+    -> (t [ n <- s ]) ! i ^ k = (t ! i ^ (k + 1)) [ n <- s ! i ^ (k + 1 - n) ].
 Proof.
-  intros t; 
+  generalize dependent n.
+  generalize dependent k.
   induction t; 
   intros; simpl.
   { destruct (le_gt_dec n (k + 1)); simpl.
@@ -327,13 +320,13 @@ Proof.
   }
 Qed.
 
-Lemma subst_4:
-  forall (a b c : term)(i n : nat),
+Lemma subst_4 (t s r : term)(i n : nat) :
   i > 0
     -> n >= i
-    -> a [ i <- b ] [ n <- c ] = a [ n + 1 <- c ] [ i <- b [ n - i + 1 <- c ] ].
+    -> t [ i <- s ] [ n <- r ] = t [ n + 1 <- r ] [ i <- s [ n - i + 1 <- r ] ].
 Proof.
-  intros t; 
+  generalize dependent n.
+  generalize dependent i.
   induction t; 
   intros; simpl.
   { destruct (lt_eq_lt_dec n i) as [ [ | ] | ];
@@ -351,7 +344,7 @@ Proof.
     { destruct (lt_eq_lt_dec (n - 1) n0) as [ [ H7 | H4 ] | H6 ]; 
       simpl; auto; try omega.
       subst n0; replace (n - 1 - i + 1) with (n - i) by omega.
-      rewrite (subst_1 c (b [n - i <- c])(n-1) 0 i); try omega.
+      rewrite (subst_1 r (s [n - i <- r])(n-1) 0 i); try omega.
       replace (S (n - 1)) with n by omega; auto.
     }
     { destruct (lt_eq_lt_dec (n - 1) n0) as [ [ | ] | ];
@@ -365,12 +358,11 @@ Proof.
   { rewrite IHt1; intuition; rewrite <- 1IHt2; intuition; auto. }
 Qed.
 
-Lemma subst_travers :
-  forall (a b c : term)(n : nat),
+Lemma subst_travers (t s r : term)(n : nat) :
   n > 0
-    -> a [ <- b ] [ n <- c ] = a [ n + 1 <- c ] [ <- b [ n <- c ] ].
+    -> t [ <- s ] [ n <- r ] = t [ n + 1 <- r ] [ <- s [ n <- r ] ].
 Proof.
-  intros; rewrite (subst_4 a b c 1 n); auto; try omega.
+  intros; rewrite (subst_4 t s r 1 n); auto; try omega.
   replace (n - 1 + 1) with n by omega; auto.
 Qed.
 
@@ -380,85 +372,80 @@ Qed.
 
 Reserved Notation " t --> s " (at level 15, left associativity).
 Inductive betaStep : term -> term -> Prop
-  := | beta_red (M N : term) :
-         app (lam M) N --> M [ <- N ]
-     | beta_lam (M N : term) :
-         M --> N
-           -> lam M --> lam N
-     | beta_app_left (M1 M2 N1 : term) :
-         M1 --> N1
-           -> app M1 M2 --> app N1 M2
-     | beta_app_right (M1 M2 N2 : term) :
-         M2 --> N2
-           -> app M1 M2 --> app M1 N2
+  := | beta_red (t s : term) :
+         app (lam t) s --> t [ <- s ]
+     | beta_lam (t s : term) :
+         t --> s
+           -> lam t --> lam s
+     | beta_app_left (t t' s : term) :
+         t --> s
+           -> app t t' --> app s t'
+     | beta_app_right (t t' s : term) :
+         t --> s
+           -> app t' t --> app t' s
   where "t --> s"
   := (betaStep t s).
 
 Reserved Notation "t -->> s" (at level 15, left associativity).
 Inductive betaReduction : term -> term -> Prop
-  := | beta_step (M N : term) :
-         M --> N
-           -> M -->> N
-     | beta_refl (M : term) :
-         M -->> M
-     | beta_trans (M N P : term) :
-         M -->> N
-           -> N -->> P
-           -> M -->> P
+  := | beta_step (t s : term) :
+         t --> s
+           -> t -->> s
+     | beta_refl (t : term) :
+         t -->> t
+     | beta_trans (t s r : term) :
+         t -->> s
+           -> s -->> r
+           -> t -->> r
   where "t -->> s"
   := (betaReduction t s).
 
-Lemma betaReduction_lam :
-  forall M M' : term,
-  M -->> M'
-    -> lam M -->> lam M'.
+Lemma betaReduction_lam (t s : term) :
+  t -->> s
+    -> lam t -->> lam s.
 Proof.
   induction 1; intros.
   { apply beta_step; apply beta_lam; trivial. }
   { apply beta_refl. }
-  { apply beta_trans with (lam N); trivial. }
+  { apply beta_trans with (lam s); trivial. }
 Qed.
 
-Lemma betaReduction_app_left :
-  forall M M' N : term,
-  M -->> M'
-    -> app M N -->> app M' N.
+Lemma betaReduction_app_left (t t' s : term) :
+  t -->> s
+    -> app t t' -->> app s t'.
 Proof.
   induction 1; intros.
   { apply beta_step; apply beta_app_left; trivial. }
   { apply beta_refl. }
-  { apply beta_trans with (app N0 N); trivial. }
+  { apply beta_trans with (app s t'); trivial. }
 Qed.
 
-Lemma betaReduction_app_right :
-  forall M M' N : term,
-  M -->> M'
-    -> app N M -->> app N M'.
+Lemma betaReduction_app_right (t t' s : term) :
+  t -->> s
+    -> app t' t -->> app t' s.
 Proof.
   induction 1; intros.
   { apply beta_step; apply beta_app_right; trivial. }
   { apply beta_refl. }
-  { apply beta_trans with (app N N0); trivial. }
+  { apply beta_trans with (app t' s); trivial. }
 Qed.
 
-Lemma betaReduction_app :
-  forall M M' N N' : term,
-  M -->> M'
-    -> N -->> N'
-    -> app M N -->> app M' N'.
+Lemma betaReduction_app (t t' s s' : term) :
+  t -->> t'
+    -> s -->> s'
+    -> app t s -->> app t' s'.
 Proof.
-  intros; apply beta_trans with (app M' N).
+  intros; apply beta_trans with (app t' s).
   { apply betaReduction_app_left; trivial. }
   { apply betaReduction_app_right; trivial. }
 Qed.
 
-Lemma betaReduction_redex :
-  forall M M' N N' : term,
-  M -->> M'
-    -> N -->> N'
-    -> app (lam M) N -->> M' [ <- N' ].
+Lemma betaReduction_redex (t t' s s' : term) :
+  t -->> t'
+    -> s -->> s'
+    -> app (lam t) s -->> t' [ <- s' ].
 Proof.
-  intros; apply beta_trans with (app (lam M') N').
+  intros; apply beta_trans with (app (lam t') s').
   { apply betaReduction_app; trivial.
     apply betaReduction_lam; trivial.
   }
@@ -473,60 +460,57 @@ Reserved Notation "t ==> s" (at level 15, left associativity).
 Inductive parallelStep : term -> term -> Prop
   := | par_var (n : nat) :
          var n ==> var n
-     | par_lam (M M' : term) :
-         M ==> M'
-           -> lam M ==> lam M'
-     | par_red (M N M' N': term) :
-         M ==> M'
-           -> N ==> N'
-           -> app (lam M) N ==> M' [ <- N' ]
-     | par_app (M N M' N': term) :
-         M ==> M'
-           -> N ==> N'
-           -> app M N ==> app M' N'
+     | par_lam (t t' : term) :
+         t ==> t'
+           -> lam t ==> lam t'
+     | par_red (t s t' s': term) :
+         t ==> t'
+           -> s ==> s'
+           -> app (lam t) s ==> t' [ <- s' ]
+     | par_app (t s t' s': term) :
+         t ==> t'
+           -> s ==> s'
+           -> app t s ==> app t' s'
   where "t ==> s"
   := (parallelStep t s).
 Hint Resolve par_red par_var par_lam par_app.
 
 Reserved Notation "t ==>> s" (at level 15, left associativity).
 Inductive parallelReduction : term -> term -> Prop
-  := | par_refl (M N : term) :
-         M ==> N
-           -> M ==>> N
-     | par_trans (M N P : term) :
-         M ==>> N
-           -> N ==>> P
-           -> M ==>> P
+  := | par_refl (t s : term) :
+         t ==> s
+           -> t ==>> s
+     | par_trans (t s r : term) :
+         t ==>> s
+           -> s ==>> r
+           -> t ==>> r
   where "t ==>> s"
   := (parallelReduction t s).
 
-Lemma parallelStep_refl :
-  forall (t : term),
+Lemma parallelStep_refl (t : term) :
   t ==> t.
 Proof.
-  intros t; induction t; auto.
+  induction t; auto.
 Qed.
 
-Lemma parallelReduction_refl :
-  forall (t : term),
+Lemma parallelReduction_refl (t : term) :
   t ==>> t.
 Proof.
-  intros t.
   apply par_refl.
   apply parallelStep_refl.
 Qed.
 Hint Resolve parallelStep_refl parallelReduction_refl.
 
-Lemma parallelShift :
-  forall (n m : nat)(t s : term),
+Lemma parallelShift (n m : nat)(t s : term) :
   t ==> s
     -> t ! (S n) ^ m ==> s ! (S n) ^ m.
 Proof.
-  intros n m t s Pts.
-  generalize n m; clear n m.
+  intros Pts.
+  generalize dependent n.
+  generalize dependent m.
   induction Pts; subst; auto.
   { intros; simpl; apply par_lam; apply IHPts. }
-  { intros; rewrite (subst_3 M' N' (S n) m 1); simpl; try omega.
+  { intros; rewrite (subst_3 t' s' (S n) m 1); simpl; try omega.
     { apply par_red; try omega; auto.
       { replace (m+1) with (S m); try omega; apply IHPts1. }
       { replace (m + 1 - 1) with m; try omega; apply IHPts2. }
@@ -539,26 +523,25 @@ Proof.
   }
 Qed.
 
-Lemma parallelSubstitute :
-  forall (n : nat)(t s u v : term),
-  t ==> s
-    -> u ==> v
-    -> t [ S n <- u ] ==> s [ S n <- v ].
+Lemma parallelSubstitute (n : nat)(t t' s s' : term) :
+  t ==> t'
+    -> s ==> s'
+    -> t [ S n <- s ] ==> t' [ S n <- s' ].
 Proof.
-  intros n t s u v Pts Puv. 
-  generalize n; clear n.
+  intros Pts Puv. 
+  generalize dependent n.
   induction Pts; subst; auto.
   { intros; simpl.
     destruct (lt_eq_lt_dec n (S n0)) as [ [ H1 | H2 ] | H3 ].
     { apply parallelStep_refl. }
-    { subst n. apply (parallelShift n0 0 u v); auto. }
+    { subst n. apply (parallelShift n0 0 s s'); auto. }
     { apply parallelStep_refl. }
   }
   { intros; simpl.
     apply par_lam. apply IHPts.
   }
   { intros; simpl. 
-    rewrite (subst_travers M' N' v (S n)); simpl; try omega.
+    rewrite (subst_travers); simpl; try omega.
     { apply par_red.
       { replace (S (n + 1)) with (S(S n)); try omega.
         apply (IHPts1 (S n)).
@@ -576,29 +559,26 @@ Qed.
 (*        Equivalence between reduction and parallel reduction      *)
 (********************************************************************)
 
-Lemma betaStep_parallelStep :
-  forall M N : term,
-  M --> N
-    -> M ==> N.
+Lemma betaStep_parallelStep (t s : term) :
+  t --> s
+    -> t ==> s.
 Proof.
   simple induction 1; auto.
 Qed.
 
-Lemma betaReduction_parallelReduction :
-  forall M N : term,
-  M -->> N
-    -> M ==>> N.
+Lemma betaReduction_parallelReduction (t s : term) :
+  t -->> s
+    -> t ==>> s.
 Proof.
   induction 1; intros.
   { apply par_refl; induction H; auto. }
   { apply par_refl; auto. }
-  { apply par_trans with N; trivial. }
+  { apply par_trans with s; trivial. }
 Qed.
 
-Lemma parallelReduction_betaReduction :
-  forall M N : term,
-  M ==>> N
-    -> M -->> N.
+Lemma parallelReduction_betaReduction (t s : term) :
+  t ==>> s
+    -> t -->> s.
 Proof.
   induction 1.
   { induction H.
@@ -607,7 +587,7 @@ Proof.
     { intros; apply betaReduction_redex; trivial. }
     { intros; apply betaReduction_app; trivial. }
   }
-  { intros; apply beta_trans with N; trivial. }
+  { intros; apply beta_trans with s; trivial. }
 Qed.
 
 (*******************************************************************)
@@ -625,8 +605,7 @@ Fixpoint maximumStep (t : term) : term
   where "t *"
   := (maximumStep t).
 
-Lemma maximumStep_parallelStep :
-  forall (t : term),
+Lemma maximumStep_parallelStep (t : term) :
   t ==> t*.
 Proof.
   induction t; simpl.
@@ -638,11 +617,11 @@ Proof.
   }
 Qed.
 
-Lemma parallelStep_maximumStep :
-  forall (t s : term),
+Lemma parallelStep_maximumStep (t s : term) :
   t ==> s
     -> s ==> t*.
 Proof.
+  generalize dependent s.
   induction t.
   { intros; inversion H; subst; auto. }
   { intros; inversion H; subst; simpl.
@@ -657,12 +636,12 @@ Proof.
     }
     { inversion H; subst; simpl; auto.
       { apply parallelSubstitute; auto.
-        assert (au : lam M' ==> (lam t1)*). { apply IHt1; auto. }
+        assert (au : lam t' ==> (lam t1)*). { apply IHt1; auto. }
         inversion au; subst; auto.
       }
       { inversion H2; subst; simpl; auto. 
         apply par_red; auto.
-        assert (au : lam M'0 ==> (lam t1)*). { apply IHt1; auto. }
+        assert (au : lam t'0 ==> (lam t1)*). { apply IHt1; auto. }
         inversion au; subst; auto.
       }
     }
@@ -678,13 +657,12 @@ Qed.
 (*                       Diamond Properties                         *)
 (********************************************************************)
 
-Lemma parallelStep_diamond :
-  forall (t s r : term),
+Lemma parallelStep_diamond (t s r : term) :
   t ==> s
     -> t ==> r
     -> { u : term |  s ==> u /\ r ==> u }.
 Proof.
-  intros t s r Pts Ptr.
+  intros Pts Ptr.
   exists t*.
   split;
     [ apply (parallelStep_maximumStep t s)
@@ -692,54 +670,51 @@ Proof.
       apply maximumStep_maximumStep; auto.
 Qed.
 
-Lemma parallelReduction_strip :
-  forall (t s r : term),
+Lemma parallelReduction_strip (t s r : term) :
   t ==> s
     -> t ==>> r
     -> exists u : term,  s ==>> u /\ r ==> u.
 Proof.
-  intros t s r Pts Rtr.
+  intros Pts Rtr.
   generalize dependent s.
   induction Rtr; subst.
-  { intros. 
-    destruct (parallelStep_diamond M s N) as [ u [ H1 H2 ] ]; auto.
+  { intros.
+    destruct (parallelStep_diamond t s0 s) as [ u [ H1 H2 ] ]; auto.
     exists u. split; auto; apply par_refl; auto.
   }
   { intros.
-    destruct (IHRtr1 s Pts) as [ u [ H1 H2 ] ].
+    destruct (IHRtr1 s0 Pts) as [ u [ H1 H2 ] ].
     destruct (IHRtr2 u H2) as [ v [ G1 G2 ] ].
     exists v. split; auto.
-    apply (par_trans s u v); auto.
+    apply (par_trans s0 u v); auto.
   }
 Qed.
 
-Theorem parallelReduction_diamond :
-  forall (t s r : term),
+Theorem parallelReduction_diamond (t s r : term) :
   t ==>> s
     -> t ==>> r
     -> exists u : term,  s ==>> u /\ r ==>> u.
 Proof.
-  intros t s r Rts Rtr.
+  intros Rts Rtr.
   generalize dependent r.
   induction Rts.
   { intros. 
-    destruct (parallelReduction_strip M N r) as [ u [ H1 H2 ] ]; auto.
+    destruct (parallelReduction_strip t s r) as [ u [ H1 H2 ] ]; auto.
     exists u. split; auto; apply par_refl; auto.
   }
   { intros.
-    destruct (IHRts1 r Rtr) as [ u [ H1 H2 ] ].
+    destruct (IHRts1 r0 Rtr) as [ u [ H1 H2 ] ].
     destruct (IHRts2 u H1) as [ v [ H3 H4 ] ].
-    exists v. split; auto. apply (par_trans r u v); auto.
+    exists v. split; auto. apply (par_trans r0 u v); auto.
   }
 Qed.
 
-Theorem Church_Rosser :
-  forall (t s r : term),
+Theorem Church_Rosser (t s r : term) :
   t -->> s
     -> t -->> r
     -> exists u : term,  s -->> u /\ r -->> u.
 Proof.
-  intros t s r Rts Rtr.
+  intros Rts Rtr.
   apply betaReduction_parallelReduction in Rts.
   apply betaReduction_parallelReduction in Rtr.
   destruct (parallelReduction_diamond t s r Rts Rtr ) as [ u [ Rsu Rry ] ].
@@ -756,16 +731,16 @@ Fixpoint multiStep (n : nat)(t : term)
      | S m => multiStep m (maximumStep t)
      end.
 
-Definition doBetaReduction (n : nat)(t : Term)
+Definition doBetaReduction (n : nat)(T : Term)
   := restoreSymbols
-       (freeVariables t)
-       (multiStep n (removeSymbols (freeVariables t) t)).
+       (freeVariables T)
+       (multiStep n (removeSymbols (freeVariables T) T)).
 
-Fixpoint termLength (T : Term) : nat
+Fixpoint TermLength (T : Term) : nat
   := match T with
      | Var k => 1
-     | Lam n t => S (termLength t)
-     | App u v  => (termLength u) + (termLength v)
+     | Lam n t => S (TermLength t)
+     | App u v  => (TermLength u) + (TermLength v)
      end.
 
 (********************************************************************)
@@ -823,7 +798,7 @@ Definition c10 := \1 2 -> #1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (
 Definition c11 := \1 2 -> #1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ #2)))))))))).
 Definition c12 := \1 2 -> #1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ #2))))))))))).
 
-Definition numeral (t : Term) : nat := (termLength t) - 3.
+Definition numeral (t : Term) : nat := (TermLength t) - 3.
 
 Compute (numeral c0).
 Compute (numeral c1).
