@@ -1,18 +1,18 @@
-(* 
+(*
 
  PROPOSITIONAL LOGIC
 
  Evgeny V Ivashkevich
- 
+
  E-mail: ivashkev@yandex.ru
 
  January 29, 2019
 
- Abstract: In this file, we formalize algebra and calculus of propositions 
-           in Coq and give relatively simple proofs of the theorems of 
-           soundness and completeness. Finally, we prove the equivalence of 
+ Abstract: In this file, we formalize algebra and calculus of propositions
+           in Coq and give relatively simple proofs of the theorems of
+           soundness and completeness. Finally, we prove the equivalence of
            the calculus of propositions and the rules of natural deduction.
- 
+
 *)
 
 Require Import List.
@@ -20,9 +20,10 @@ Import ListNotations.
 Notation "x @ L"
   := (In x L)(at level 20).
 
-Definition eq_nat_dec :
-  forall x y : nat, { x = y } + { x <> y }.
+Definition eq_nat_dec (x y : nat) :
+  { x = y } + { x <> y }.
 Proof.
+  generalize dependent y.
   induction x; destruct y.
   - now left.
   - now right.
@@ -43,15 +44,16 @@ Definition nds : word -> word
 (* LANGUAGE *)
 
 Inductive formula : Set
-  := falsehood : formula
-   | variable  : symbol -> formula
-   | implies   : formula -> formula -> formula
-   .
+  := | falsehood : formula
+     | variable  : symbol -> formula
+     | implies   : formula -> formula -> formula
+     .
 
 (* language is decidable *)
-Definition eq_formula_dec :
-  forall (P Q : formula), { P = Q } + { P <> Q }.
+Definition eq_formula_dec (P Q : formula) :
+  { P = Q } + { P <> Q }.
 Proof.
+  generalize dependent Q.
   induction P; destruct Q;
   try (left; reflexivity);
   try (right; discriminate).
@@ -778,16 +780,19 @@ Qed.
 
 Reserved Notation "G |-- F" (at level 70).
 Inductive PC : context -> formula -> Prop
-  := pc_as (G : context)(P : formula) : 
-       P @ G -> G |-- P
-   | pc_ap (G : context)(P Q : formula) : 
-       G |-- P --> Q -> G |-- P -> G |-- Q
-   | pc_K (G : context)(P Q : formula) : 
-       G |-- P --> (Q --> P)
-   | pc_S (G : context)(P Q R: formula) : 
-       G |-- (P --> Q --> R) --> (P --> Q) --> (P --> R)
-   | pc_C (G : context)(P : formula) : 
-       G |-- ^ ^ P --> P
+  := | pc_as (G : context)(P : formula) : 
+         P @ G
+           -> G |-- P
+     | pc_ap (G : context)(P Q : formula) : 
+         G |-- P --> Q
+           -> G |-- P
+           -> G |-- Q
+     | pc_K (G : context)(P Q : formula) : 
+         G |-- P --> (Q --> P)
+     | pc_S (G : context)(P Q R: formula) : 
+         G |-- (P --> Q --> R) --> (P --> Q) --> (P --> R)
+     | pc_C (G : context)(P : formula) : 
+         G |-- ^ ^ P --> P
 where "G |-- F"
   := (PC G F).
 
@@ -959,8 +964,8 @@ Proof.
 Qed.
 
 Lemma pc_swap_hyps (G : context)(P Q R : formula) :
- P :: Q :: G |-- R
-  -> Q :: P :: G |-- R.
+  P :: Q :: G |-- R
+    -> Q :: P :: G |-- R.
 Proof.
   intros H.
   remember (P :: Q :: G) as G'.
@@ -1667,13 +1672,16 @@ Proof.
 Qed.
 
 Theorem le_n_0_eq (n : nat) :
-  n <= 0 -> 0 = n.
+  n <= 0
+    -> 0 = n.
 Proof.
   induction n; auto with arith.
 Qed.
 
 Theorem le_lt_trans (n m p : nat) :
-  n <= m -> m < p -> n < p.
+  n <= m
+    -> m < p
+    -> n < p.
 Proof.
   induction 2; auto with arith.
 Qed.
@@ -1913,14 +1921,19 @@ Qed.
 
 Reserved Notation " G |--- F " (at level 70).
 Inductive ND : context -> formula -> Prop
-  := nd_as (G : context)(P : formula) :
-       P @ G -> G |--- P
-   | nd_ap (G : context)(P Q : formula) :
-       G |--- P --> Q -> G |--- P -> G |--- Q
-   | nd_in (G : context)(P Q : formula) : 
-       P :: G |--- Q -> G |--- P --> Q
-   | nd_nn (G : context)(P : formula) :
-       G |--- ^ ^ P -> G |--- P
+  := | nd_as (G : context)(P : formula) :
+         P @ G
+           -> G |--- P
+     | nd_ap (G : context)(P Q : formula) :
+         G |--- P --> Q
+           -> G |--- P
+           -> G |--- Q
+     | nd_in (G : context)(P Q : formula) : 
+         P :: G |--- Q
+           -> G |--- P --> Q
+     | nd_nn (G : context)(P : formula) :
+         G |--- ^ ^ P
+           -> G |--- P
 where " G |--- F "
   := (ND G F).
 Notation "|--- P"
