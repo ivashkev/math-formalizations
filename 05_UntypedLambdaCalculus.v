@@ -25,6 +25,10 @@ Definition symbol
   := nat.
 Definition word : Set
   := list symbol.
+Notation "'a'" := (1 : symbol) (at level 0).
+Notation "'b'" := (2 : symbol) (at level 0).
+Notation "'c'" := (3 : symbol) (at level 0).
+Notation "'d'" := (4 : symbol) (at level 0).
 
 Definition nds : word -> word
   := nodup eq_nat_dec.
@@ -65,7 +69,7 @@ Inductive Term : Set
      | Lam : symbol -> Term -> Term
      | App : Term -> Term -> Term
      .
-Notation "# n"
+Notation "n `"
   := (Var n)
      (at level 1).
 Notation "x @ y"
@@ -143,7 +147,7 @@ Fixpoint termShift (t : term)(n m : nat)
   := match t with
      | var k => if le_gt_dec k m then var k else var (k + n - 1)
      | app u v  => app (u ! n ^ m)(v ! n ^ m)
-     | lam b => lam (b ! n ^ (S m))
+     | lam s => lam (s ! n ^ (S m))
      end
   where "t ! n ^ m"
   := (termShift t n m).
@@ -594,19 +598,19 @@ Qed.
 (*             Maximal Parallel Beta-reduction                     *)
 (*******************************************************************)
 
-Reserved Notation "t *" (at level 1, left associativity).
+Reserved Notation "t **" (at level 1, left associativity).
 Fixpoint maximumStep (t : term) : term
   := match t with
      | var n => var n
-     | lam t => lam t*
-     | app (lam s) v => s* [ <- v* ]
-     | app u v => app u* v*
+     | lam t => lam t**
+     | app (lam s) v => s** [ <- v** ]
+     | app u v => app u** v**
      end
-  where "t *"
+  where "t **"
   := (maximumStep t).
 
 Lemma maximumStep_parallelStep (t : term) :
-  t ==> t*.
+  t ==> t**.
 Proof.
   induction t; simpl.
   { apply par_var; auto. }
@@ -619,7 +623,7 @@ Qed.
 
 Lemma parallelStep_maximumStep (t s : term) :
   t ==> s
-    -> s ==> t*.
+    -> s ==> t**.
 Proof.
   generalize dependent s.
   induction t.
@@ -636,12 +640,12 @@ Proof.
     }
     { inversion H; subst; simpl; auto.
       { apply parallelSubstitute; auto.
-        assert (au : lam t' ==> (lam t1)*). { apply IHt1; auto. }
+        assert (au : lam t' ==> (lam t1)**). { apply IHt1; auto. }
         inversion au; subst; auto.
       }
       { inversion H2; subst; simpl; auto. 
         apply par_red; auto.
-        assert (au : lam t'0 ==> (lam t1)*). { apply IHt1; auto. }
+        assert (au : lam t'0 ==> (lam t1)**). { apply IHt1; auto. }
         inversion au; subst; auto.
       }
     }
@@ -663,7 +667,7 @@ Lemma parallelStep_diamond (t s r : term) :
     -> { u : term |  s ==> u /\ r ==> u }.
 Proof.
   intros Pts Ptr.
-  exists t*.
+  exists t**.
   split;
     [ apply (parallelStep_maximumStep t s)
     | apply (parallelStep_maximumStep t r) ]; auto;
@@ -725,200 +729,189 @@ Qed.
 (*                          Applications                            *)
 (********************************************************************)
 
-Fixpoint multiStep (n : nat)(t : term)
-  := match n with
-     | O => t
-     | S m => multiStep m (maximumStep t)
-     end.
-
-Definition doBetaReduction (n : nat)(T : Term)
-  := restoreSymbols
-       (freeVariables T)
-       (multiStep n (removeSymbols (freeVariables T) T)).
-
-Fixpoint TermLength (T : Term) : nat
+Fixpoint len (T : Term) : nat
   := match T with
      | Var k => 1
-     | Lam n t => S (TermLength t)
-     | App u v  => (TermLength u) + (TermLength v)
+     | Lam n t => S (len t)
+     | App u v  => (len u) + (len v)
      end.
+
+Fixpoint step (n : nat)(t : term)
+  := match n with
+     | O => t
+     | S m => step m (maximumStep t)
+     end.
+
+Definition beta (n : nat)(T : Term)
+  := let fV := (freeVariables T)
+     in restoreSymbols fV (step n (removeSymbols fV T)).
 
 (********************************************************************)
 (*                               Examples                           *)
 (********************************************************************)
 
+Definition max := 120.
+Definition reduce := beta max.
+
 (*  Boolean constants *)
 
-Definition tru  := \1 2 -> #1.
-Definition fls  := \1 2 -> #2.
+Definition tru  := \a b -> a`.
+Definition fls  := \a b -> b`.
 
-Definition ifte := \1 2 3 -> #1 @ #2 @ #3.
-Definition and  := \1 2 -> #1 @ #2 @ fls.
-Definition or   := \1 2 -> #1 @ tru @ #2.
-Definition not  := \1 -> #1 @ fls @ tru.
+Definition ifte := \a b c -> a` @ b` @ c`.
+Definition and  := \a b -> a` @ b` @ fls.
+Definition or   := \a b -> a` @ tru @ b`.
+Definition not  := \a -> a` @ fls @ tru.
 
-Compute (doBetaReduction 3 (ifte @ tru @ #1 @ #2)).
-Compute (doBetaReduction 3 (ifte @ fls @ #1 @ #2)).
+Compute reduce (ifte @ tru @ a` @ b`).
+Compute reduce (ifte @ fls @ a` @ b`).
 
-Compute (doBetaReduction 3 (and @ tru @ tru)).
-Compute (doBetaReduction 3 (and @ tru @ fls)).
-Compute (doBetaReduction 3 (and @ fls @ tru)).
-Compute (doBetaReduction 3 (and @ fls @ fls)).
+Compute reduce (and @ tru @ tru).
+Compute reduce (and @ tru @ fls).
+Compute reduce (and @ fls @ tru).
+Compute reduce (and @ fls @ fls).
 
-Compute (doBetaReduction 3 (or @ tru @ tru)).
-Compute (doBetaReduction 3 (or @ tru @ fls)).
-Compute (doBetaReduction 3 (or @ fls @ tru)).
-Compute (doBetaReduction 3 (or @ fls @ fls)).
+Compute reduce (or @ tru @ tru).
+Compute reduce (or @ tru @ fls).
+Compute reduce (or @ fls @ tru).
+Compute reduce (or @ fls @ fls).
 
-Compute (doBetaReduction 3 (not @ tru)).
-Compute (doBetaReduction 3 (not @ fls)).
+Compute reduce (not @ tru).
+Compute reduce (not @ fls).
 
 (*  Pairs *)
 
-Definition pair := \1 2 3 -> #3 @ #1 @ #2.
-Definition fst  := \1 -> #1 @ tru.
-Definition snd  := \1 -> #1 @ fls.
+Definition pair := \a b c -> c` @ a` @ b`.
+Definition fst  := \a -> a` @ tru.
+Definition snd  := \a -> a` @ fls.
 
-Compute (doBetaReduction 5 (fst @ (pair @ #1 @ #2))).
-Compute (doBetaReduction 5 (snd @ (pair @ #1 @ #2))).
+Compute reduce (fst @ (pair @ a` @ b`)).
+Compute reduce (snd @ (pair @ a` @ b`)).
 
 (*  Numerals *)
 
-Definition c0  := \1 2 -> #2.
-Definition c1  := \1 2 -> #1 @ #2.
-Definition c2  := \1 2 -> #1 @ (#1 @ #2).
-Definition c3  := \1 2 -> #1 @ (#1 @ (#1 @ #2)).
-Definition c4  := \1 2 -> #1 @ (#1 @ (#1 @ (#1 @ #2))).
-Definition c5  := \1 2 -> #1 @ (#1 @ (#1 @ (#1 @ (#1 @ #2)))).
-Definition c6  := \1 2 -> #1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ #2))))).
-Definition c7  := \1 2 -> #1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ #2)))))).
-Definition c8  := \1 2 -> #1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ #2))))))).
-Definition c9  := \1 2 -> #1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ #2)))))))).
-Definition c10 := \1 2 -> #1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ #2))))))))).
-Definition c11 := \1 2 -> #1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ #2)))))))))).
-Definition c12 := \1 2 -> #1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ (#1 @ #2))))))))))).
+Definition o := \a b -> b`.
+Definition s := \a b c -> b` @ (a` @ b` @ c`).
 
-Definition numeral (t : Term) : nat := (TermLength t) - 3.
+Fixpoint numeral (n : nat) : Term
+  := match n with
+      | O   => o
+      | S p => s @ numeral p
+      end.
+Notation "# n" := (beta (3 * n) (numeral n)) (at level 0).
 
-Compute (numeral c0).
-Compute (numeral c1).
-Compute (numeral c2).
-Compute (numeral c3).
-Compute (numeral c4).
-Compute (numeral c5).
-Compute (numeral c6).
-Compute (numeral c7).
-Compute (numeral c8).
-Compute (numeral c9).
-Compute (numeral c10).
-Compute (numeral c11).
-Compute (numeral c12).
+Definition value (t : Term) : nat
+  := (len t) - 3.
+Notation "$ t" := (value (reduce t)) (at level 0).
 
-Definition iszero := \1 -> #1 @ (\2 -> fls) @ tru.
+Definition plus   := \a b c d -> a` @ c` @ (b` @ c` @ d`).
 
-Definition succ   := \3 1 2 -> #1 @ (#3 @ #1 @ #2).
-Definition plus   := \4 3 1 2 -> #4 @ #1 @ (#3 @ #1 @ #2).
+Definition iszero := \a -> a` @ (\b -> fls) @ tru.
 
-Definition zz     := pair @ c0 @ c0.
-Definition ss     := \1 -> pair @ (snd @ #1) @ (plus @ c1 @ (snd @ #1)).
-Definition pred   := \1 -> fst @ (#1 @ ss @ zz).
-Definition minus  := \1 2 -> #2 @ pred @ #1.
+Definition zz     := pair @ #0 @ #0.
+Definition ss     := \a -> pair @ (snd @ a`) @ (plus @ #1 @ (snd @ a`)).
+Definition pred   := \a -> fst @ (a` @ ss @ zz).
 
-Definition mult   := \1 2 3 -> #1 @ (#2 @ #3).
-Definition power  := \1 2 -> #2 @ #1.
+Definition minus  := \a b -> b` @ pred @ a`.
 
-Definition equal  := \1 2 -> and @ (iszero @ (#1 @ pred @ #2)) @ (iszero @ (#2 @ pred @ #1)).
+Definition mult   := \a b c -> a` @ (b` @ c`).
+Definition power  := \a b -> b` @ a`.
 
-Compute (numeral (doBetaReduction 3 (succ @ c0))).
-Compute (numeral (doBetaReduction 3 (succ @ c1))).
-Compute (numeral (doBetaReduction 3 (succ @ c2))).
-Compute (numeral (doBetaReduction 3 (succ @ c3))).
-Compute (numeral (doBetaReduction 3 (succ @ c4))).
+Definition equal  := \a b -> and @ (iszero @ (a` @ pred @ b`)) @ (iszero @ (b` @ pred @ a`)).
 
-Compute (numeral (doBetaReduction 6 (pred @ c0))).
-Compute (numeral (doBetaReduction 6 (pred @ c1))).
-Compute (numeral (doBetaReduction 8 (pred @ c2))).
-Compute (numeral (doBetaReduction 8 (pred @ c3))).
-Compute (numeral (doBetaReduction 8 (pred @ c4))).
-Compute (numeral (doBetaReduction 8 (pred @ c5))).
+Compute $(s @ #0).
+Compute $(s @ #1).
+Compute $(s @ #2).
+Compute $(s @ #3).
+Compute $(s @ #4).
 
-Compute (numeral (doBetaReduction 4 (plus @ c2 @ c3))).
-Compute (numeral (doBetaReduction 4 (plus @ c3 @ c5))).
+Compute $(pred @ #0).
+Compute $(pred @ #1).
+Compute $(pred @ #2).
+Compute $(pred @ #3).
+Compute $(pred @ #4).
+Compute $(pred @ #5).
 
-Compute (numeral (doBetaReduction 16 (minus @ c4 @ c2))).
-Compute (numeral (doBetaReduction 21 (minus @ c8 @ c3))).
-Compute (numeral (doBetaReduction 46 (minus @ c12 @ c8))).
+Compute $(plus @ #2 @ #3).
+Compute $(plus @ #3 @ #5).
 
-Compute (numeral (doBetaReduction 4 (mult @ c2 @ c3))).
-Compute (numeral (doBetaReduction 4 (mult @ c3 @ c5))).
-Compute (numeral (doBetaReduction 4 (mult @ c5 @ c4))).
+Compute $(minus @ #4 @ #2).
+Compute $(minus @ #8 @ #3).
+Compute $(minus @ #12 @ #8).
 
-Compute (numeral (doBetaReduction 52 (power @ c2 @ c10))).
-Compute (numeral (doBetaReduction 52 (power @ c3 @ c3))).
-Compute (numeral (doBetaReduction 52 (power @ c6 @ c3))).
+Compute $(mult @ #2 @ #3).
+Compute $(mult @ #3 @ #5).
+Compute $(mult @ #5 @ #4).
 
-Compute (doBetaReduction 3 (iszero @ c0)).
-Compute (doBetaReduction 3 (iszero @ c1)).
-Compute (doBetaReduction 3 (iszero @ c2)).
-Compute (doBetaReduction 3 (iszero @ c3)).
-Compute (doBetaReduction 3 (iszero @ c4)).
+Compute $(power @ #2 @ #10).
+Compute $(power @ #3 @ #3).
+Compute $(power @ #6 @ #3).
 
-Compute (doBetaReduction 32 (equal @ c5 @ c5)).
-Compute (doBetaReduction 32 (equal @ c5 @ c6)).
+Compute reduce (iszero @ #0).
+Compute reduce (iszero @ #1).
+Compute reduce (iszero @ #2).
+Compute reduce (iszero @ #3).
+Compute reduce (iszero @ #4).
+
+Compute reduce (equal @ #5 @ #5).
+Compute reduce (equal @ #5 @ #6).
 
 (*  Recursion *)
 
-Definition omega := (\1 -> #1 @ #1 ) @ (\1 -> #1 @ #1 ).
+Definition omega := (\a -> a` @ a` ) @ (\a -> a` @ a` ).
 
-Definition fixpoint := \1 -> ((\2 -> #1 @ (\3 -> #2 @ #2 @ #3 )) @ (\2 -> #1 @ (\3 -> #2 @ #2 @ #3 ))).
-Definition ff := \1 2 -> ifte @ (iszero @ #2) @ (\3 -> c1) @ (\3 -> (mult @ #2 @ (#1 @ (pred @ #2)))) @ c0.
+Definition fixpoint := \a -> ((\b -> a` @ (\c -> b` @ b` @ c` )) @ (\b -> a` @ (\c -> b` @ b` @ c` ))).
+Definition ff := \a b -> ifte @ (iszero @ b`) @ (\c -> #1) @ (\c -> (mult @ b` @ (a` @ (pred @ b`)))) @ #0.
 Definition factorial := fixpoint @ ff.
 
-Compute (doBetaReduction 4 (omega @ omega)).
+Compute reduce (omega @ omega).
 
-Compute (numeral (doBetaReduction  8 (factorial @ c0))).
-Compute (numeral (doBetaReduction 15 (factorial @ c1))).
-Compute (numeral (doBetaReduction 20 (factorial @ c2))).
-Compute (numeral (doBetaReduction 25 (factorial @ c3))).
-Compute (numeral (doBetaReduction 30 (factorial @ c4))).
+Compute $(factorial @ #0).
+Compute $(factorial @ #1).
+Compute $(factorial @ #2).
+Compute $(factorial @ #3).
+Compute $(factorial @ #4).
 
 (*  Tests *)
 
-Definition t1 := #1 @ (\2 3 -> #1).
+Definition t1 := a` @ (\b c -> a`).
 Definition G1 := sort (freeVariables t1).
-Definition s1 := removeSymbols G1 t1 .
+Definition s1 := removeSymbols G1 t1.
+Compute G1.
 Compute s1.
 Compute (restoreSymbols G1 s1).
 
-Definition t2 := #1 @ (\2 -> #1) @ (\2 -> #1 @ (\3 -> #1)).
+Definition t2 := a` @ (\b -> a`) @ (\b -> a` @ (\c -> a`)).
 Definition G2 := sort (freeVariables t2).
 Definition s2 := removeSymbols G2 t2.
+Compute G2.
 Compute s2.
 Compute (restoreSymbols G2 s2).
 
-Definition t3 := \1 -> (\2 -> #2 @ (\3 -> #3)) @ (\2 -> #1 @ #2).
+Definition t3 := \a -> (\b -> b` @ (\c -> c`)) @ (\b -> a` @ b`).
 Definition G3 := sort (freeVariables t3).
 Definition s3 := removeSymbols G3 t3.
+Compute G3.
+Compute s3.
 Compute (restoreSymbols G3 s3).
 
-Definition t4 := \ 1 2 3 -> #1 @ #3 @ (#2 @ #3).
+Definition t4 := \a b c -> a` @ c` @ (b` @ c`).
 Definition G4 := sort (freeVariables t4).
 Definition s4 := removeSymbols G4 t4.
+Compute G4.
+Compute s4.
 Compute (restoreSymbols G4 s4).
 
-Definition t5 := (\1 2 -> (#3 @ #1 @ #2)) @ (\1 -> #2 @ #1).
+Definition t5 := (\a b -> (c` @ a` @ b`)) @ (\a -> b` @ a`).
 Definition G5 := sort (freeVariables t5).
 Definition s5 := removeSymbols G5 t5.
+Compute G5.
+Compute s5.
 Compute (restoreSymbols G5 s5).
 
-Definition t6 := \4 -> #3 @ (\1 -> #2 @ #1) @ #4.
+Definition t6 := \a -> b` @ (\c -> d` @ c`) @ a`.
 Definition G6 := sort(freeVariables t6).
 Definition s6 := removeSymbols G6 t6.
+Compute G6.
+Compute s6.
 Compute (restoreSymbols G6 s6).
-
-Compute s5.
-Definition s5x := lam (app (app (var 4)(var 2))(var 1)).
-Definition s5y := lam (app (var 2)(var 1)).
-Compute (s5x [ <- s5y ]).
-
-Compute (multiStep  1 s5).
