@@ -83,9 +83,9 @@ Definition truth : formula
 Notation "_|_"
   := (falsehood)
   (at level 1).
-Notation "# x"
+Notation "x `"
   := (variable x)
-  (at level 1).
+  (at level 0).
 Notation "P --> Q"
   := (implies P Q)
   (at level 16, right associativity).
@@ -94,7 +94,7 @@ Definition Not (P : formula) : formula
   := (P --> _|_).
 Notation "^ P"
   := (Not P)
-  (at level 0).
+  (at level 2, right associativity).
 Definition And (P Q : formula) : formula
   := ^ (P --> ^ Q).
 Notation "P 'and' Q"
@@ -1561,8 +1561,8 @@ Qed.
 
 Fixpoint VarList (P : formula) : word
   := match P with
-     | _|_ => []
-     | # Q => [Q]
+     | _|_     => []
+     | Q`      => [Q]
      | Q --> R => VarList Q ++ VarList R
      end.
 
@@ -1570,7 +1570,7 @@ Definition Literals (P : formula) : word
   := nds (VarList P).
 
 Definition Bar (E : evaluation)(x : symbol) : formula
-  := if (symbolValue E x) then # x else ^ # x.
+  := if (symbolValue E x) then x` else ^ x`.
 
 Lemma map_nodup (E : evaluation)(W : word) :
   map (Bar E)(nds W) = ndf (map (Bar E) W).
@@ -1855,10 +1855,10 @@ Proof.
     { rewrite <- Hx in *. simpl in *; auto. }
     { intros VfP Hn. simpl. rewrite <- Hx in Hn.
       { assert (H1 : forall E, Bar E a :: map (Bar  E)x |-- P). { apply Hn. }
-        assert (Ha : forall E, # a :: map (Bar  E)x |-- P).
+        assert (Ha : forall E, a` :: map (Bar  E)x |-- P).
         { intros E.
           rewrite (pro_eq_fun E a true).
-          { replace (# a) with (Bar (pro E a true) a).
+          { replace (a`) with (Bar (pro E a true) a).
             { apply (H1 (pro E a true)). }
             unfold Bar, pro; simpl.
             destruct (eq_nat_dec a a); try reflexivity.
@@ -1869,10 +1869,10 @@ Proof.
           { intros G. rewrite <- Hx in G. auto. }
           apply skipn_nodup. unfold nds. apply NoDup_nodup.
         }
-        assert (nHa : forall E, (^ # a) :: map (Bar E) x |-- P).
+        assert (nHa : forall E, (^ a`) :: map (Bar E) x |-- P).
         { intros E.
           rewrite (pro_eq_fun E a false).
-          { replace (^ # a) with (Bar (pro E a false) a).
+          { replace (^ a`) with (Bar (pro E a false) a).
             { apply (H1 (pro E a false)). }
             unfold Bar, pro; simpl.
             destruct (eq_nat_dec a a); try reflexivity.
@@ -1883,7 +1883,7 @@ Proof.
           { intros G. rewrite <- Hx in G. auto. }
           apply skipn_nodup. unfold nds. apply NoDup_nodup.
         }
-        assert (Hor : forall E, (# a or (^ # a)) :: map (Bar E) x |-- P).
+        assert (Hor : forall E, (a` or (^ a`)) :: map (Bar E) x |-- P).
         { intros f. apply pc_or_case; auto. }
         intros f. eapply pc_tertium_non_datur. apply Hor.
       }
